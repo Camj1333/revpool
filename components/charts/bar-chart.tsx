@@ -39,14 +39,14 @@ export function BarChart({ data, height = 300 }: BarChartProps) {
                 y1={y}
                 x2={chartWidth - padding.right}
                 y2={y}
-                stroke="#374151"
+                stroke="#e5e7eb"
                 strokeDasharray="4 4"
               />
               <text
                 x={padding.left - 8}
                 y={y + 4}
                 textAnchor="end"
-                className="fill-gray-500 text-[11px]"
+                className="fill-gray-400 text-[11px]"
               >
                 {formatCompact(value)}
               </text>
@@ -82,7 +82,7 @@ export function BarChart({ data, height = 300 }: BarChartProps) {
                 x={padding.left + i * barWidth + barWidth / 2}
                 y={chartHeight - 10}
                 textAnchor="middle"
-                className="fill-gray-400 text-[11px]"
+                className="fill-gray-500 text-[11px]"
               >
                 {d.label}
               </text>

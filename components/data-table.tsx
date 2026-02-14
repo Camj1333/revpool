@@ -41,17 +41,17 @@ export function DataTable<T extends Record<string, any>>({
   }, [data, sortKey, sortDir]);
 
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-gray-800">
+            <tr className="border-b border-gray-200">
               {columns.map((col) => (
                 <th
                   key={col.key}
-                  className={`px-6 py-3 text-left text-gray-400 font-medium ${
+                  className={`px-6 py-3 text-left text-gray-500 font-medium ${
                     col.sortable !== false
-                      ? "cursor-pointer hover:text-white select-none"
+                      ? "cursor-pointer hover:text-gray-900 select-none"
                       : ""
                   }`}
                   onClick={() =>
@@ -74,7 +74,7 @@ export function DataTable<T extends Record<string, any>>({
             {sorted.map((row, i) => (
               <tr
                 key={i}
-                className={`border-b border-gray-800/50 last:border-0 hover:bg-gray-800/50 transition ${
+                className={`border-b border-gray-100 last:border-0 hover:bg-gray-50 transition ${
                   onRowClick ? "cursor-pointer" : ""
                 }`}
                 onClick={() => onRowClick?.(row)}

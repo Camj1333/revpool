@@ -30,13 +30,6 @@ export function LineChart({ data, height = 300 }: LineChartProps) {
   }));
 
   const polylinePoints = points.map((p) => `${p.x},${p.y}`).join(" ");
-  const areaPoints = [
-    `${points[0].x},${padding.top + innerHeight}`,
-    ...points.map((p) => `${p.x},${p.y}`),
-    `${points[points.length - 1].x},${padding.top + innerHeight}`,
-  ].join(" ");
-
-  const gradientId = "lineGradient";
 
   return (
     <div className="relative">
@@ -45,13 +38,6 @@ export function LineChart({ data, height = 300 }: LineChartProps) {
         width="100%"
         className="overflow-visible"
       >
-        <defs>
-          <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.3} />
-            <stop offset="100%" stopColor="#3b82f6" stopOpacity={0} />
-          </linearGradient>
-        </defs>
-
         {/* Grid lines */}
         {Array.from({ length: gridLines + 1 }).map((_, i) => {
           const y = padding.top + (innerHeight / gridLines) * i;
@@ -63,14 +49,14 @@ export function LineChart({ data, height = 300 }: LineChartProps) {
                 y1={y}
                 x2={chartWidth - padding.right}
                 y2={y}
-                stroke="#374151"
+                stroke="#e5e7eb"
                 strokeDasharray="4 4"
               />
               <text
                 x={padding.left - 8}
                 y={y + 4}
                 textAnchor="end"
-                className="fill-gray-500 text-[11px]"
+                className="fill-gray-400 text-[11px]"
               >
                 {formatCompact(value)}
               </text>
@@ -85,14 +71,11 @@ export function LineChart({ data, height = 300 }: LineChartProps) {
             x={padding.left + (i / (data.length - 1)) * innerWidth}
             y={chartHeight - 10}
             textAnchor="middle"
-            className="fill-gray-400 text-[11px]"
+            className="fill-gray-500 text-[11px]"
           >
             {d.label}
           </text>
         ))}
-
-        {/* Area fill */}
-        <polygon points={areaPoints} fill={`url(#${gradientId})`} />
 
         {/* Line */}
         <polyline
@@ -119,7 +102,7 @@ export function LineChart({ data, height = 300 }: LineChartProps) {
               className={`transition-all duration-150 ${
                 hovered === i ? "fill-blue-400" : "fill-blue-600"
               }`}
-              stroke="#0a0a0a"
+              stroke="#ffffff"
               strokeWidth={2}
             />
           </g>

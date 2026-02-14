@@ -78,8 +78,8 @@ export function Sidebar({ open, onClose }: SidebarProps) {
           onClick={onClose}
           className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition ${
             isActive(item.href)
-              ? "bg-gray-800 text-white"
-              : "text-gray-400 hover:text-white hover:bg-gray-800/50"
+              ? "bg-blue-50 text-blue-600 font-medium"
+              : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
           }`}
         >
           {item.icon}
@@ -92,7 +92,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
   return (
     <>
       {/* Desktop sidebar */}
-      <aside className="hidden lg:flex lg:fixed lg:inset-y-0 lg:left-0 lg:w-64 lg:flex-col bg-gray-950 border-r border-gray-800 z-30">
+      <aside className="hidden lg:flex lg:fixed lg:inset-y-0 lg:left-0 lg:w-64 lg:flex-col bg-white border-r border-gray-200 z-30">
         {nav}
       </aside>
 
@@ -100,10 +100,10 @@ export function Sidebar({ open, onClose }: SidebarProps) {
       {open && (
         <>
           <div
-            className="fixed inset-0 bg-black/60 z-40 lg:hidden"
+            className="fixed inset-0 bg-black/30 z-40 lg:hidden"
             onClick={onClose}
           />
-          <aside className="fixed inset-y-0 left-0 w-64 bg-gray-950 border-r border-gray-800 z-50 lg:hidden">
+          <aside className="fixed inset-y-0 left-0 w-64 bg-white border-r border-gray-200 z-50 lg:hidden">
             {nav}
           </aside>
         </>

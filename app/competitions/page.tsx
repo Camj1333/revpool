@@ -22,7 +22,7 @@ const columns: Column<Competition>[] = [
     key: "revenue",
     label: "Revenue",
     render: (v) => (
-      <span className="text-green-400 font-mono">{formatCurrency(v as number)}</span>
+      <span className="text-green-600 font-mono">{formatCurrency(v as number)}</span>
     ),
   },
   {
@@ -88,34 +88,34 @@ export default function CompetitionsPage() {
         <h1 className="text-2xl font-semibold tracking-tight">Competitions</h1>
         <button
           onClick={() => setShowForm(!showForm)}
-          className="bg-blue-600 hover:bg-blue-500 text-white transition px-4 py-2 rounded-lg text-sm font-medium"
+          className="bg-blue-600 hover:bg-blue-700 text-white transition px-4 py-2 rounded-lg text-sm font-medium"
         >
           + New Competition
         </button>
       </div>
 
       {showForm && (
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 flex gap-3 items-end">
+        <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm flex gap-3 items-end">
           <div className="flex-1">
-            <label className="text-sm text-gray-400 block mb-1">Competition Name</label>
+            <label className="text-sm text-gray-500 block mb-1">Competition Name</label>
             <input
               type="text"
               placeholder="e.g. Q3 Revenue Sprint"
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleCreate()}
-              className="bg-gray-800 border border-gray-700 text-white placeholder-gray-500 rounded-lg px-4 py-2 text-sm w-full focus:outline-none focus:border-gray-600"
+              className="bg-white border border-gray-300 text-gray-900 placeholder-gray-400 rounded-lg px-4 py-2 text-sm w-full focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
             />
           </div>
           <button
             onClick={handleCreate}
-            className="bg-blue-600 hover:bg-blue-500 transition text-white px-4 py-2 rounded-lg text-sm font-medium"
+            className="bg-blue-600 hover:bg-blue-700 transition text-white px-4 py-2 rounded-lg text-sm font-medium"
           >
             Create
           </button>
           <button
             onClick={() => setShowForm(false)}
-            className="text-gray-400 hover:text-white transition px-4 py-2 rounded-lg text-sm"
+            className="text-gray-500 hover:text-gray-900 transition px-4 py-2 rounded-lg text-sm"
           >
             Cancel
           </button>
@@ -123,15 +123,15 @@ export default function CompetitionsPage() {
       )}
 
       {/* Filter tabs */}
-      <div className="flex gap-1 bg-gray-900 border border-gray-800 rounded-lg p-1 w-fit">
+      <div className="flex gap-1 bg-gray-100 border border-gray-200 rounded-lg p-1 w-fit">
         {tabs.map((tab) => (
           <button
             key={tab.value}
             onClick={() => setFilter(tab.value)}
             className={`px-4 py-1.5 rounded-md text-sm transition ${
               filter === tab.value
-                ? "bg-gray-800 text-white"
-                : "text-gray-400 hover:text-white"
+                ? "bg-white text-gray-900 shadow-sm"
+                : "text-gray-500 hover:text-gray-900"
             }`}
           >
             {tab.label}

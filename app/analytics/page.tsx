@@ -70,15 +70,15 @@ export default function AnalyticsPage() {
       <h1 className="text-2xl font-semibold tracking-tight">Analytics</h1>
 
       {/* Time range selector */}
-      <div className="flex gap-1 bg-gray-900 border border-gray-800 rounded-lg p-1 w-fit">
+      <div className="flex gap-1 bg-gray-100 border border-gray-200 rounded-lg p-1 w-fit">
         {timeRanges.map((r) => (
           <button
             key={r}
             onClick={() => setRange(r)}
             className={`px-4 py-1.5 rounded-md text-sm transition ${
               range === r
-                ? "bg-gray-800 text-white"
-                : "text-gray-400 hover:text-white"
+                ? "bg-white text-gray-900 shadow-sm"
+                : "text-gray-500 hover:text-gray-900"
             }`}
           >
             {r}
@@ -87,18 +87,18 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Revenue Trends */}
-      <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
+      <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
         <h2 className="text-lg font-semibold tracking-tight mb-4">Revenue Trends</h2>
         <LineChart data={trendData} />
       </div>
 
       {/* Two-column charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
+        <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
           <h2 className="text-lg font-semibold tracking-tight mb-4">By Competition</h2>
           <BarChart data={competitionRevenue.map((c) => ({ label: c.label.split(" ").slice(0, 2).join(" "), value: Number(c.value) }))} />
         </div>
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
+        <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
           <h2 className="text-lg font-semibold tracking-tight mb-4">Quarterly Comparison</h2>
           <BarChart data={comparisonData} />
         </div>

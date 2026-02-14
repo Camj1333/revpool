@@ -17,7 +17,7 @@ const participantColumns: Column<Participant>[] = [
     label: "Name",
     render: (_, row) => (
       <div className="flex items-center gap-3">
-        <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-xs font-medium">
+        <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs font-medium">
           {(row as Participant).avatar}
         </div>
         <span>{(row as Participant).name}</span>
@@ -28,7 +28,7 @@ const participantColumns: Column<Participant>[] = [
     key: "revenue",
     label: "Revenue",
     render: (v) => (
-      <span className="text-green-400 font-mono">{formatCurrency(v as number)}</span>
+      <span className="text-green-600 font-mono">{formatCurrency(v as number)}</span>
     ),
   },
   { key: "deals", label: "Deals" },
@@ -39,7 +39,7 @@ const participantColumns: Column<Participant>[] = [
       const val = v as number;
       if (val === 0) return <span className="text-gray-500">-</span>;
       return (
-        <span className={val > 0 ? "text-green-400" : "text-red-400"}>
+        <span className={val > 0 ? "text-green-600" : "text-red-600"}>
           {val > 0 ? `\u2191${val}` : `\u2193${Math.abs(val)}`}
         </span>
       );
@@ -76,7 +76,7 @@ export default function CompetitionDetailPage({
   if (loading) {
     return (
       <div className="space-y-4">
-        <Link href="/competitions" className="text-blue-400 hover:text-blue-300 text-sm">
+        <Link href="/competitions" className="text-blue-600 hover:text-blue-500 text-sm">
           &larr; Back to Competitions
         </Link>
         <div className="animate-pulse text-gray-400">Loading...</div>
@@ -87,7 +87,7 @@ export default function CompetitionDetailPage({
   if (notFound || !competition) {
     return (
       <div className="space-y-4">
-        <Link href="/competitions" className="text-blue-400 hover:text-blue-300 text-sm">
+        <Link href="/competitions" className="text-blue-600 hover:text-blue-500 text-sm">
           &larr; Back to Competitions
         </Link>
         <p className="text-gray-400">Competition not found.</p>
@@ -110,7 +110,7 @@ export default function CompetitionDetailPage({
     <div className="space-y-6">
       <Link
         href="/competitions"
-        className="text-blue-400 hover:text-blue-300 text-sm inline-flex items-center gap-1"
+        className="text-blue-600 hover:text-blue-500 text-sm inline-flex items-center gap-1"
       >
         &larr; Back to Competitions
       </Link>
@@ -120,7 +120,7 @@ export default function CompetitionDetailPage({
         <StatusBadge status={competition.status} />
       </div>
 
-      <p className="text-gray-400 text-sm">
+      <p className="text-gray-500 text-sm">
         {competition.startDate} &mdash; {competition.endDate || "TBD"}
       </p>
 
@@ -133,7 +133,7 @@ export default function CompetitionDetailPage({
 
       {/* Two-column: Chart + Leaderboard */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
+        <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
           <h2 className="text-lg font-semibold tracking-tight mb-4">Revenue by Rep</h2>
           <BarChart data={revenueHistory} />
         </div>

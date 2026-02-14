@@ -6,7 +6,7 @@ import { formatCurrency } from "@/lib/format";
 import { apiFetch } from "@/lib/api";
 import { Participant, Column } from "@/lib/types";
 
-const podiumColors = ["from-yellow-500/20 border-yellow-500/30", "from-gray-400/20 border-gray-400/30", "from-amber-600/20 border-amber-600/30"];
+const podiumColors = ["bg-yellow-50 border-yellow-200", "bg-gray-50 border-gray-200", "bg-amber-50 border-amber-200"];
 const podiumLabels = ["1st", "2nd", "3rd"];
 
 const columns: Column<Participant>[] = [
@@ -16,7 +16,7 @@ const columns: Column<Participant>[] = [
     label: "Name",
     render: (_, row) => (
       <div className="flex items-center gap-3">
-        <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-xs font-medium">
+        <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs font-medium">
           {(row as Participant).avatar}
         </div>
         <span>{(row as Participant).name}</span>
@@ -27,7 +27,7 @@ const columns: Column<Participant>[] = [
     key: "revenue",
     label: "Revenue",
     render: (v) => (
-      <span className="text-green-400 font-mono">{formatCurrency(v as number)}</span>
+      <span className="text-green-600 font-mono">{formatCurrency(v as number)}</span>
     ),
   },
   { key: "deals", label: "Deals" },
@@ -38,7 +38,7 @@ const columns: Column<Participant>[] = [
       const val = v as number;
       if (val === 0) return <span className="text-gray-500">-</span>;
       return (
-        <span className={val > 0 ? "text-green-400" : "text-red-400"}>
+        <span className={val > 0 ? "text-green-600" : "text-red-600"}>
           {val > 0 ? `\u2191${val}` : `\u2193${Math.abs(val)}`}
         </span>
       );
@@ -78,14 +78,14 @@ export default function LeaderboardPage() {
         {top3.map((p, i) => (
           <div
             key={p.id}
-            className={`bg-gradient-to-b ${podiumColors[i]} border rounded-xl p-6 text-center`}
+            className={`${podiumColors[i]} border rounded-xl p-6 text-center`}
           >
             <div className="text-sm text-gray-400 mb-2">{podiumLabels[i]}</div>
-            <div className="w-14 h-14 rounded-full bg-gray-700 flex items-center justify-center text-lg font-semibold mx-auto mb-3">
+            <div className="w-14 h-14 rounded-full bg-gray-200 flex items-center justify-center text-lg font-semibold mx-auto mb-3">
               {p.avatar}
             </div>
             <p className="font-semibold text-lg">{p.name}</p>
-            <p className="text-green-400 font-mono text-xl mt-1">
+            <p className="text-green-600 font-mono text-xl mt-1">
               {formatCurrency(Number(p.revenue))}
             </p>
             <p className="text-gray-400 text-sm mt-1">{p.deals} deals</p>

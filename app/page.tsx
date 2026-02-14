@@ -18,7 +18,7 @@ const columns: Column<Competition>[] = [
     key: "revenue",
     label: "Revenue",
     render: (v) => (
-      <span className="text-green-400 font-mono">{formatCurrency(v as number)}</span>
+      <span className="text-green-600 font-mono">{formatCurrency(v as number)}</span>
     ),
   },
   {
@@ -72,7 +72,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Revenue Chart */}
-      <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
+      <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
         <h2 className="text-lg font-semibold tracking-tight mb-4">Revenue Overview</h2>
         <LineChart data={monthlyRevenue} />
       </div>
@@ -83,7 +83,7 @@ export default function DashboardPage() {
           <h2 className="text-lg font-semibold tracking-tight">Recent Competitions</h2>
           <Link
             href="/competitions"
-            className="text-sm text-blue-400 hover:text-blue-300 transition"
+            className="text-sm text-blue-600 hover:text-blue-500 transition"
           >
             View all
           </Link>
