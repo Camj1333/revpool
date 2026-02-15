@@ -2,6 +2,7 @@
 
 import { use, useState, useEffect } from "react";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 import { KPICard } from "@/components/kpi-card";
 import { BarChart } from "@/components/charts/bar-chart";
 import { DataTable } from "@/components/data-table";
@@ -53,10 +54,15 @@ export default function CompetitionDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
+  const { data: session } = useSession();
+  const role = (session?.user as Record<string, unknown> | undefined)?.role as string | undefined;
+
   const [competition, setCompetition] = useState<Competition | null>(null);
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [enrolled, setEnrolled] = useState(false);
+  const [joining, setJoining] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -72,6 +78,30 @@ export default function CompetitionDetailPage({
       setLoading(false);
     });
   }, [id]);
+
+  // Check enrollment for reps
+  useEffect(() => {
+    if (role === "rep") {
+      apiFetch<number[]>("/api/competitions/enrolled").then((ids) => {
+        setEnrolled(ids.includes(Number(id)));
+      });
+    }
+  }, [role, id]);
+
+  const handleJoin = async () => {
+    setJoining(true);
+    try {
+      const res = await fetch(`/api/competitions/${id}/join`, { method: "POST" });
+      if (res.ok || res.status === 409) {
+        setEnrolled(true);
+        // Refresh participants
+        const parts = await apiFetch<Participant[]>(`/api/competitions/${id}/participants`).catch(() => []);
+        setParticipants(parts);
+      }
+    } finally {
+      setJoining(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -118,6 +148,21 @@ export default function CompetitionDetailPage({
       <div className="flex items-center gap-4">
         <h1 className="text-3xl font-bold tracking-tight">{competition.name}</h1>
         <StatusBadge status={competition.status} />
+        {role === "rep" && (
+          enrolled ? (
+            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-600 border border-emerald-200">
+              Joined
+            </span>
+          ) : (
+            <button
+              onClick={handleJoin}
+              disabled={joining}
+              className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white transition rounded-lg px-4 py-1.5 text-sm font-semibold"
+            >
+              {joining ? "Joining..." : "Join Competition"}
+            </button>
+          )
+        )}
       </div>
 
       <p className="text-gray-500 text-sm">

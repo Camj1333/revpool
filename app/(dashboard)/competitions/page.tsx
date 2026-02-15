@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { DataTable } from "@/components/data-table";
 import { StatusBadge } from "@/components/status-badge";
 import { formatCurrency } from "@/lib/format";
@@ -15,7 +16,7 @@ const tabs: { label: string; value: CompetitionStatus | "all" }[] = [
   { label: "Upcoming", value: "upcoming" },
 ];
 
-const columns: Column<Competition>[] = [
+const baseColumns: Column<Competition>[] = [
   { key: "name", label: "Competition" },
   { key: "leader", label: "Leader" },
   {
@@ -37,11 +38,16 @@ const columns: Column<Competition>[] = [
 
 export default function CompetitionsPage() {
   const router = useRouter();
+  const { data: session } = useSession();
+  const role = (session?.user as Record<string, unknown> | undefined)?.role as string | undefined;
+
   const [filter, setFilter] = useState<CompetitionStatus | "all">("all");
   const [showForm, setShowForm] = useState(false);
   const [newName, setNewName] = useState("");
   const [competitions, setCompetitions] = useState<Competition[]>([]);
   const [loading, setLoading] = useState(true);
+  const [enrolledIds, setEnrolledIds] = useState<Set<number>>(new Set());
+  const [joiningId, setJoiningId] = useState<string | null>(null);
 
   useEffect(() => {
     apiFetch<Competition[]>("/api/competitions").then((data) => {
@@ -49,6 +55,14 @@ export default function CompetitionsPage() {
       setLoading(false);
     });
   }, []);
+
+  useEffect(() => {
+    if (role === "rep") {
+      apiFetch<number[]>("/api/competitions/enrolled").then((ids) => {
+        setEnrolledIds(new Set(ids));
+      });
+    }
+  }, [role]);
 
   const filtered =
     filter === "all"
@@ -73,6 +87,55 @@ export default function CompetitionsPage() {
     }
   };
 
+  const handleJoin = async (competitionId: string) => {
+    setJoiningId(competitionId);
+    try {
+      const res = await fetch(`/api/competitions/${competitionId}/join`, {
+        method: "POST",
+      });
+      if (res.ok || res.status === 409) {
+        setEnrolledIds((prev) => new Set([...prev, Number(competitionId)]));
+      }
+    } finally {
+      setJoiningId(null);
+    }
+  };
+
+  // Add action column for reps
+  const columns: Column<Competition>[] =
+    role === "rep"
+      ? [
+          ...baseColumns,
+          {
+            key: "id" as keyof Competition & string,
+            label: "",
+            sortable: false,
+            render: (v) => {
+              const compId = String(v);
+              if (enrolledIds.has(Number(compId))) {
+                return (
+                  <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-600 border border-emerald-200">
+                    Joined
+                  </span>
+                );
+              }
+              return (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleJoin(compId);
+                  }}
+                  disabled={joiningId === compId}
+                  className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white transition rounded-lg px-3 py-1.5 text-xs font-semibold"
+                >
+                  {joiningId === compId ? "Joining..." : "Join"}
+                </button>
+              );
+            },
+          },
+        ]
+      : baseColumns;
+
   if (loading) {
     return (
       <div className="space-y-8">
@@ -86,15 +149,17 @@ export default function CompetitionsPage() {
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold tracking-tight">Competitions</h1>
-        <button
-          onClick={() => setShowForm(!showForm)}
-          className="bg-blue-600 hover:bg-blue-700 text-white transition rounded-xl px-5 py-2.5 text-sm font-semibold shadow-sm hover:shadow"
-        >
-          + New Competition
-        </button>
+        {role === "manager" && (
+          <button
+            onClick={() => setShowForm(!showForm)}
+            className="bg-blue-600 hover:bg-blue-700 text-white transition rounded-xl px-5 py-2.5 text-sm font-semibold shadow-sm hover:shadow"
+          >
+            + New Competition
+          </button>
+        )}
       </div>
 
-      {showForm && (
+      {role === "manager" && showForm && (
         <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm flex gap-3 items-end">
           <div className="flex-1">
             <label className="text-sm text-gray-500 block mb-1">Competition Name</label>
