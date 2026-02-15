@@ -87,15 +87,21 @@ function CountdownTimer({ endDate }: { endDate: string }) {
 export default function RepDashboardPage() {
   const [data, setData] = useState<RepDashboardData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    apiFetch<RepDashboardData>("/api/rep-dashboard").then((d) => {
-      setData(d);
-      setLoading(false);
-    });
+    apiFetch<RepDashboardData>("/api/rep-dashboard")
+      .then((d) => {
+        setData(d);
+        setLoading(false);
+      })
+      .catch((err) => {
+        setError(err instanceof Error ? err.message : "Failed to load dashboard");
+        setLoading(false);
+      });
   }, []);
 
-  if (loading || !data) {
+  if (loading) {
     return (
       <div className="space-y-10">
         <div>
@@ -103,6 +109,15 @@ export default function RepDashboardPage() {
           <p className="text-gray-400 mt-1">Loading your performance data...</p>
         </div>
         <div className="animate-pulse text-gray-400">Loading...</div>
+      </div>
+    );
+  }
+
+  if (error || !data) {
+    return (
+      <div className="space-y-10">
+        <h1 className="text-3xl font-bold tracking-tight">My Dashboard</h1>
+        <p className="text-red-500">{error || "Failed to load dashboard data."}</p>
       </div>
     );
   }

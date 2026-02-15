@@ -74,19 +74,34 @@ const leaderboardColumns: Column<Participant>[] = [
 export default function ManagerDashboardPage() {
   const [data, setData] = useState<ManagerDashboardData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    apiFetch<ManagerDashboardData>("/api/manager-dashboard").then((d) => {
-      setData(d);
-      setLoading(false);
-    });
+    apiFetch<ManagerDashboardData>("/api/manager-dashboard")
+      .then((d) => {
+        setData(d);
+        setLoading(false);
+      })
+      .catch((err) => {
+        setError(err instanceof Error ? err.message : "Failed to load dashboard");
+        setLoading(false);
+      });
   }, []);
 
-  if (loading || !data) {
+  if (loading) {
     return (
       <div className="space-y-10">
         <h1 className="text-3xl font-bold tracking-tight">Team Overview</h1>
         <div className="animate-pulse text-gray-400">Loading...</div>
+      </div>
+    );
+  }
+
+  if (error || !data) {
+    return (
+      <div className="space-y-10">
+        <h1 className="text-3xl font-bold tracking-tight">Team Overview</h1>
+        <p className="text-red-500">{error || "Failed to load dashboard data."}</p>
       </div>
     );
   }
