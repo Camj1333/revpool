@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { withDb } from "@/lib/db";
+import { ensureParticipant } from "@/lib/ensure-participant";
 
 export async function POST(
   _req: NextRequest,
@@ -17,15 +18,17 @@ export async function POST(
     return NextResponse.json({ error: "Only reps can join competitions" }, { status: 403 });
   }
 
-  const participantId = user.participantId;
-  if (!participantId) {
-    return NextResponse.json({ error: "No participant profile linked" }, { status: 400 });
-  }
-
   const { id } = await params;
 
   try {
     const row = await withDb(async (client) => {
+      const participantId = await ensureParticipant(
+        client,
+        user.id,
+        user.participantId,
+        user.name || "Unknown"
+      );
+
       // Check if already enrolled
       const existing = await client.query(
         `SELECT id FROM competition_participants WHERE competition_id = $1 AND participant_id = $2`,

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { KPICard } from "@/components/kpi-card";
 import { BarChart } from "@/components/charts/bar-chart";
 import { DataTable } from "@/components/data-table";
@@ -154,6 +155,19 @@ export default function RepDashboardPage() {
           {data.kpis.map((kpi) => (
             <KPICard key={kpi.label} kpi={kpi} />
           ))}
+        </div>
+      )}
+
+      {/* No active competition prompt */}
+      {!data.activeCompetition && (
+        <div className="bg-white border border-gray-200 rounded-2xl p-8 shadow-[0_1px_3px_rgba(0,0,0,0.04)] text-center">
+          <p className="text-gray-500 mb-4">You haven&apos;t joined any active competitions yet.</p>
+          <Link
+            href="/competitions"
+            className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white transition rounded-xl px-5 py-2.5 text-sm font-semibold shadow-sm"
+          >
+            Browse Competitions
+          </Link>
         </div>
       )}
 

@@ -10,13 +10,23 @@ export async function GET() {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const user = session.user as any;
-  const participantId = user.participantId;
-  if (!participantId) {
-    return NextResponse.json([]);
-  }
 
   try {
     const ids = await withDb(async (client) => {
+      // Look up current participant_id from DB (session JWT may be stale)
+      let participantId = user.participantId;
+      if (!participantId) {
+        const userRow = await client.query(
+          "SELECT participant_id FROM users WHERE id = $1",
+          [user.id]
+        );
+        participantId = userRow.rows[0]?.participant_id;
+      }
+
+      if (!participantId) {
+        return [];
+      }
+
       const res = await client.query(
         `SELECT competition_id FROM competition_participants WHERE participant_id = $1`,
         [participantId]

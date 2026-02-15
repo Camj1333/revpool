@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { withDb } from "@/lib/db";
+import { ensureParticipant } from "@/lib/ensure-participant";
 
 export async function GET() {
   try {
@@ -9,18 +10,13 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const participantId = (session.user as Record<string, unknown>).participantId as number | null;
-    if (!participantId) {
-      return NextResponse.json({
-        userName: session.user.name,
-        activeCompetition: null,
-        kpis: [],
-        history: [],
-        leaderboard: [],
-      });
-    }
-
     const data = await withDb(async (client) => {
+      const participantId = await ensureParticipant(
+        client,
+        session.user!.id!,
+        (session.user as Record<string, unknown>).participantId as number | null,
+        session.user!.name || "Unknown"
+      );
       // Get active competition info for this rep
       const activeCompRes = await client.query(`
         SELECT c.id, c.name, c.end_date,
