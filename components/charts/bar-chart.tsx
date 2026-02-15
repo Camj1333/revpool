@@ -28,6 +28,12 @@ export function BarChart({ data, height = 300 }: BarChartProps) {
         width="100%"
         className="overflow-visible"
       >
+        <defs>
+          <filter id="tooltip-shadow" x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="0" dy="1" stdDeviation="2" floodOpacity="0.1" />
+          </filter>
+        </defs>
+
         {/* Grid lines */}
         {Array.from({ length: gridLines + 1 }).map((_, i) => {
           const y = padding.top + (innerHeight / gridLines) * i;
@@ -39,7 +45,7 @@ export function BarChart({ data, height = 300 }: BarChartProps) {
                 y1={y}
                 x2={chartWidth - padding.right}
                 y2={y}
-                stroke="#e5e7eb"
+                stroke="#f3f4f6"
                 strokeDasharray="4 4"
               />
               <text
@@ -72,9 +78,9 @@ export function BarChart({ data, height = 300 }: BarChartProps) {
                 y={y}
                 width={w}
                 height={barHeight}
-                rx={4}
+                rx={6}
                 className={`transition-all duration-150 ${
-                  hovered === i ? "fill-blue-400" : "fill-blue-600"
+                  hovered === i ? "fill-blue-600" : "fill-blue-500"
                 }`}
               />
               {/* X label */}
@@ -82,7 +88,7 @@ export function BarChart({ data, height = 300 }: BarChartProps) {
                 x={padding.left + i * barWidth + barWidth / 2}
                 y={chartHeight - 10}
                 textAnchor="middle"
-                className="fill-gray-500 text-[11px]"
+                className="fill-gray-500 text-[11px] font-medium"
               >
                 {d.label}
               </text>
@@ -92,7 +98,7 @@ export function BarChart({ data, height = 300 }: BarChartProps) {
 
         {/* Tooltip */}
         {hovered !== null && (
-          <g>
+          <g filter="url(#tooltip-shadow)">
             <rect
               x={padding.left + hovered * barWidth + barWidth / 2 - 40}
               y={
@@ -104,7 +110,9 @@ export function BarChart({ data, height = 300 }: BarChartProps) {
               width={80}
               height={24}
               rx={4}
-              className="fill-gray-800"
+              className="fill-white"
+              stroke="#e5e7eb"
+              strokeWidth={1}
             />
             <text
               x={padding.left + hovered * barWidth + barWidth / 2}
@@ -115,7 +123,7 @@ export function BarChart({ data, height = 300 }: BarChartProps) {
                 16
               }
               textAnchor="middle"
-              className="fill-white text-[12px] font-medium"
+              className="fill-gray-900 text-[12px] font-semibold"
             >
               {formatCompact(data[hovered].value)}
             </text>

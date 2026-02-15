@@ -38,6 +38,12 @@ export function LineChart({ data, height = 300 }: LineChartProps) {
         width="100%"
         className="overflow-visible"
       >
+        <defs>
+          <filter id="line-tooltip-shadow" x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="0" dy="1" stdDeviation="2" floodOpacity="0.1" />
+          </filter>
+        </defs>
+
         {/* Grid lines */}
         {Array.from({ length: gridLines + 1 }).map((_, i) => {
           const y = padding.top + (innerHeight / gridLines) * i;
@@ -49,7 +55,7 @@ export function LineChart({ data, height = 300 }: LineChartProps) {
                 y1={y}
                 x2={chartWidth - padding.right}
                 y2={y}
-                stroke="#e5e7eb"
+                stroke="#f3f4f6"
                 strokeDasharray="4 4"
               />
               <text
@@ -71,7 +77,7 @@ export function LineChart({ data, height = 300 }: LineChartProps) {
             x={padding.left + (i / (data.length - 1)) * innerWidth}
             y={chartHeight - 10}
             textAnchor="middle"
-            className="fill-gray-500 text-[11px]"
+            className="fill-gray-500 text-[11px] font-medium"
           >
             {d.label}
           </text>
@@ -82,7 +88,7 @@ export function LineChart({ data, height = 300 }: LineChartProps) {
           points={polylinePoints}
           fill="none"
           stroke="#3b82f6"
-          strokeWidth={2.5}
+          strokeWidth={3}
           strokeLinejoin="round"
           strokeLinecap="round"
         />
@@ -99,31 +105,32 @@ export function LineChart({ data, height = 300 }: LineChartProps) {
               cx={p.x}
               cy={p.y}
               r={hovered === i ? 5 : 3}
-              className={`transition-all duration-150 ${
-                hovered === i ? "fill-blue-400" : "fill-blue-600"
-              }`}
-              stroke="#ffffff"
-              strokeWidth={2}
+              className="transition-all duration-150"
+              fill={hovered === i ? "#3b82f6" : "white"}
+              stroke="#3b82f6"
+              strokeWidth={2.5}
             />
           </g>
         ))}
 
         {/* Tooltip */}
         {hovered !== null && (
-          <g>
+          <g filter="url(#line-tooltip-shadow)">
             <rect
               x={points[hovered].x - 40}
               y={points[hovered].y - 32}
               width={80}
               height={24}
               rx={4}
-              className="fill-gray-800"
+              className="fill-white"
+              stroke="#e5e7eb"
+              strokeWidth={1}
             />
             <text
               x={points[hovered].x}
               y={points[hovered].y - 16}
               textAnchor="middle"
-              className="fill-white text-[12px] font-medium"
+              className="fill-gray-900 text-[12px] font-semibold"
             >
               {formatCompact(data[hovered].value)}
             </text>

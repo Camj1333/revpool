@@ -22,7 +22,7 @@ const columns: Column<Competition>[] = [
     key: "revenue",
     label: "Revenue",
     render: (v) => (
-      <span className="text-green-600 font-mono">{formatCurrency(v as number)}</span>
+      <span className="text-emerald-600 font-mono">{formatCurrency(v as number)}</span>
     ),
   },
   {
@@ -75,27 +75,27 @@ export default function CompetitionsPage() {
 
   if (loading) {
     return (
-      <div className="space-y-6">
-        <h1 className="text-2xl font-semibold tracking-tight">Competitions</h1>
+      <div className="space-y-8">
+        <h1 className="text-3xl font-bold tracking-tight">Competitions</h1>
         <div className="animate-pulse text-gray-400">Loading...</div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold tracking-tight">Competitions</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Competitions</h1>
         <button
           onClick={() => setShowForm(!showForm)}
-          className="bg-blue-600 hover:bg-blue-700 text-white transition px-4 py-2 rounded-lg text-sm font-medium"
+          className="bg-blue-600 hover:bg-blue-700 text-white transition rounded-xl px-5 py-2.5 text-sm font-semibold shadow-sm hover:shadow"
         >
           + New Competition
         </button>
       </div>
 
       {showForm && (
-        <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm flex gap-3 items-end">
+        <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm flex gap-3 items-end">
           <div className="flex-1">
             <label className="text-sm text-gray-500 block mb-1">Competition Name</label>
             <input
@@ -104,18 +104,18 @@ export default function CompetitionsPage() {
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleCreate()}
-              className="bg-white border border-gray-300 text-gray-900 placeholder-gray-400 rounded-lg px-4 py-2 text-sm w-full focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+              className="bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 rounded-xl px-4 h-10 text-sm w-full focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
             />
           </div>
           <button
             onClick={handleCreate}
-            className="bg-blue-600 hover:bg-blue-700 transition text-white px-4 py-2 rounded-lg text-sm font-medium"
+            className="bg-blue-600 hover:bg-blue-700 transition text-white rounded-xl px-5 py-2.5 text-sm font-semibold shadow-sm"
           >
             Create
           </button>
           <button
             onClick={() => setShowForm(false)}
-            className="text-gray-500 hover:text-gray-900 transition px-4 py-2 rounded-lg text-sm"
+            className="text-gray-500 hover:text-gray-900 transition px-4 py-2.5 rounded-xl text-sm"
           >
             Cancel
           </button>
@@ -123,15 +123,15 @@ export default function CompetitionsPage() {
       )}
 
       {/* Filter tabs */}
-      <div className="flex gap-1 bg-gray-100 border border-gray-200 rounded-lg p-1 w-fit">
+      <div className="flex gap-1 bg-gray-100 rounded-xl p-1.5 w-fit">
         {tabs.map((tab) => (
           <button
             key={tab.value}
             onClick={() => setFilter(tab.value)}
-            className={`px-4 py-1.5 rounded-md text-sm transition ${
+            className={`px-4 py-1.5 rounded-lg text-sm transition ${
               filter === tab.value
-                ? "bg-white text-gray-900 shadow-sm"
-                : "text-gray-500 hover:text-gray-900"
+                ? "bg-white text-gray-900 shadow-sm font-medium"
+                : "text-gray-500 hover:text-gray-700"
             }`}
           >
             {tab.label}

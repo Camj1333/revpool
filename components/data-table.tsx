@@ -7,12 +7,14 @@ interface DataTableProps<T> {
   columns: Column<T>[];
   data: T[];
   onRowClick?: (row: T) => void;
+  rowClassName?: (row: T) => string;
 }
 
 export function DataTable<T extends Record<string, any>>({
   columns,
   data,
   onRowClick,
+  rowClassName,
 }: DataTableProps<T>) {
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
@@ -41,17 +43,17 @@ export function DataTable<T extends Record<string, any>>({
   }, [data, sortKey, sortDir]);
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+    <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-gray-200">
+            <tr className="bg-gray-50/80">
               {columns.map((col) => (
                 <th
                   key={col.key}
-                  className={`px-6 py-3 text-left text-gray-500 font-medium ${
+                  className={`px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-400 ${
                     col.sortable !== false
-                      ? "cursor-pointer hover:text-gray-900 select-none"
+                      ? "cursor-pointer hover:text-gray-700 select-none"
                       : ""
                   }`}
                   onClick={() =>
@@ -74,9 +76,9 @@ export function DataTable<T extends Record<string, any>>({
             {sorted.map((row, i) => (
               <tr
                 key={i}
-                className={`border-b border-gray-100 last:border-0 hover:bg-gray-50 transition ${
+                className={`even:bg-gray-50/40 hover:bg-blue-50/40 transition ${
                   onRowClick ? "cursor-pointer" : ""
-                }`}
+                } ${rowClassName ? rowClassName(row) : ""}`}
                 onClick={() => onRowClick?.(row)}
               >
                 {columns.map((col) => (

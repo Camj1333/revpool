@@ -58,27 +58,27 @@ export default function AnalyticsPage() {
 
   if (loading) {
     return (
-      <div className="space-y-8">
-        <h1 className="text-2xl font-semibold tracking-tight">Analytics</h1>
+      <div className="space-y-10">
+        <h1 className="text-3xl font-bold tracking-tight">Analytics</h1>
         <div className="animate-pulse text-gray-400">Loading...</div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-8">
-      <h1 className="text-2xl font-semibold tracking-tight">Analytics</h1>
+    <div className="space-y-10">
+      <h1 className="text-3xl font-bold tracking-tight">Analytics</h1>
 
       {/* Time range selector */}
-      <div className="flex gap-1 bg-gray-100 border border-gray-200 rounded-lg p-1 w-fit">
+      <div className="flex gap-1 bg-gray-100 rounded-xl p-1.5 w-fit">
         {timeRanges.map((r) => (
           <button
             key={r}
             onClick={() => setRange(r)}
-            className={`px-4 py-1.5 rounded-md text-sm transition ${
+            className={`px-4 py-1.5 rounded-lg text-sm transition ${
               range === r
-                ? "bg-white text-gray-900 shadow-sm"
-                : "text-gray-500 hover:text-gray-900"
+                ? "bg-white text-gray-900 shadow-sm font-medium"
+                : "text-gray-500 hover:text-gray-700"
             }`}
           >
             {r}
@@ -87,18 +87,18 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Revenue Trends */}
-      <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+      <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
         <h2 className="text-lg font-semibold tracking-tight mb-4">Revenue Trends</h2>
         <LineChart data={trendData} />
       </div>
 
       {/* Two-column charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
           <h2 className="text-lg font-semibold tracking-tight mb-4">By Competition</h2>
           <BarChart data={competitionRevenue.map((c) => ({ label: c.label.split(" ").slice(0, 2).join(" "), value: Number(c.value) }))} />
         </div>
-        <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+        <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
           <h2 className="text-lg font-semibold tracking-tight mb-4">Quarterly Comparison</h2>
           <BarChart data={comparisonData} />
         </div>

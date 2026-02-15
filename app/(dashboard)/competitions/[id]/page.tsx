@@ -17,7 +17,7 @@ const participantColumns: Column<Participant>[] = [
     label: "Name",
     render: (_, row) => (
       <div className="flex items-center gap-3">
-        <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs font-medium">
+        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-100 to-blue-200 text-blue-700 flex items-center justify-center text-xs font-medium">
           {(row as Participant).avatar}
         </div>
         <span>{(row as Participant).name}</span>
@@ -28,7 +28,7 @@ const participantColumns: Column<Participant>[] = [
     key: "revenue",
     label: "Revenue",
     render: (v) => (
-      <span className="text-green-600 font-mono">{formatCurrency(v as number)}</span>
+      <span className="text-emerald-600 font-mono">{formatCurrency(v as number)}</span>
     ),
   },
   { key: "deals", label: "Deals" },
@@ -39,7 +39,7 @@ const participantColumns: Column<Participant>[] = [
       const val = v as number;
       if (val === 0) return <span className="text-gray-500">-</span>;
       return (
-        <span className={val > 0 ? "text-green-600" : "text-red-600"}>
+        <span className={val > 0 ? "text-emerald-600" : "text-red-500"}>
           {val > 0 ? `\u2191${val}` : `\u2193${Math.abs(val)}`}
         </span>
       );
@@ -76,7 +76,7 @@ export default function CompetitionDetailPage({
   if (loading) {
     return (
       <div className="space-y-4">
-        <Link href="/competitions" className="text-blue-600 hover:text-blue-500 text-sm">
+        <Link href="/competitions" className="text-blue-600 hover:text-blue-500 text-sm font-medium">
           &larr; Back to Competitions
         </Link>
         <div className="animate-pulse text-gray-400">Loading...</div>
@@ -87,7 +87,7 @@ export default function CompetitionDetailPage({
   if (notFound || !competition) {
     return (
       <div className="space-y-4">
-        <Link href="/competitions" className="text-blue-600 hover:text-blue-500 text-sm">
+        <Link href="/competitions" className="text-blue-600 hover:text-blue-500 text-sm font-medium">
           &larr; Back to Competitions
         </Link>
         <p className="text-gray-400">Competition not found.</p>
@@ -107,16 +107,16 @@ export default function CompetitionDetailPage({
     : [];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <Link
         href="/competitions"
-        className="text-blue-600 hover:text-blue-500 text-sm inline-flex items-center gap-1"
+        className="text-blue-600 hover:text-blue-500 text-sm inline-flex items-center gap-1 font-medium"
       >
         &larr; Back to Competitions
       </Link>
 
       <div className="flex items-center gap-4">
-        <h1 className="text-2xl font-semibold tracking-tight">{competition.name}</h1>
+        <h1 className="text-3xl font-bold tracking-tight">{competition.name}</h1>
         <StatusBadge status={competition.status} />
       </div>
 
@@ -125,15 +125,15 @@ export default function CompetitionDetailPage({
       </p>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
         {kpis.map((kpi) => (
           <KPICard key={kpi.label} kpi={kpi} />
         ))}
       </div>
 
       {/* Two-column: Chart + Leaderboard */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
           <h2 className="text-lg font-semibold tracking-tight mb-4">Revenue by Rep</h2>
           <BarChart data={revenueHistory} />
         </div>

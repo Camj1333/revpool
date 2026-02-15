@@ -34,6 +34,16 @@ CREATE TABLE IF NOT EXISTS competition_participants (
   rank_change      INTEGER NOT NULL DEFAULT 0,
   UNIQUE (competition_id, participant_id)
 );
+
+CREATE TABLE IF NOT EXISTS users (
+  id             SERIAL PRIMARY KEY,
+  name           TEXT NOT NULL,
+  email          TEXT NOT NULL UNIQUE,
+  password_hash  TEXT NOT NULL,
+  role           TEXT NOT NULL DEFAULT 'rep' CHECK (role IN ('rep', 'manager')),
+  participant_id INTEGER REFERENCES participants(id) ON DELETE SET NULL,
+  created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
 `;
 
 export async function withDb<T>(fn: (client: Client) => Promise<T>): Promise<T> {
