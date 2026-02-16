@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS competitions (
   revenue     NUMERIC NOT NULL DEFAULT 0,
   status      TEXT NOT NULL DEFAULT 'upcoming'
               CHECK (status IN ('active', 'completed', 'upcoming')),
+  prize       NUMERIC NOT NULL DEFAULT 0,
   start_date  DATE,
   end_date    DATE
 );
@@ -46,11 +47,16 @@ CREATE TABLE IF NOT EXISTS users (
 );
 `;
 
+const MIGRATIONS = `
+ALTER TABLE competitions ADD COLUMN IF NOT EXISTS prize NUMERIC NOT NULL DEFAULT 0;
+`;
+
 export async function withDb<T>(fn: (client: Client) => Promise<T>): Promise<T> {
   const client = createClient();
   await client.connect();
   try {
     await client.query(ENSURE_TABLES);
+    await client.query(MIGRATIONS);
     return await fn(client);
   } finally {
     await client.end();

@@ -5,7 +5,7 @@ export async function GET() {
   try {
     const rows = await withDb(async (client) => {
       const res = await client.query(`
-        SELECT c.id, c.name, c.leader, c.revenue, c.status,
+        SELECT c.id, c.name, c.leader, c.revenue, c.status, c.prize,
                c.start_date AS "startDate", c.end_date AS "endDate",
                COUNT(cp.id)::int AS participants
         FROM competitions c
@@ -23,15 +23,15 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const { name, status, startDate, endDate } = await req.json();
+  const { name, status, startDate, endDate, prize } = await req.json();
   try {
     const row = await withDb(async (client) => {
       const res = await client.query(
-        `INSERT INTO competitions(name, status, start_date, end_date)
-         VALUES($1, COALESCE($2, 'upcoming'), $3, $4)
-         RETURNING id, name, leader, revenue, status,
+        `INSERT INTO competitions(name, status, start_date, end_date, prize)
+         VALUES($1, COALESCE($2, 'upcoming'), $3, $4, COALESCE($5, 0))
+         RETURNING id, name, leader, revenue, status, prize,
                    start_date AS "startDate", end_date AS "endDate"`,
-        [name, status || null, startDate || null, endDate || null]
+        [name, status || null, startDate || null, endDate || null, prize || null]
       );
       return { ...res.rows[0], participants: 0 };
     });

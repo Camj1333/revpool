@@ -89,8 +89,12 @@ export default function RepDashboardPage() {
   const [data, setData] = useState<RepDashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [saleRevenue, setSaleRevenue] = useState("");
+  const [saleDeals, setSaleDeals] = useState("1");
+  const [loggingSale, setLoggingSale] = useState(false);
+  const [saleSuccess, setSaleSuccess] = useState(false);
 
-  useEffect(() => {
+  const loadData = () =>
     apiFetch<RepDashboardData>("/api/rep-dashboard")
       .then((d) => {
         setData(d);
@@ -100,7 +104,33 @@ export default function RepDashboardPage() {
         setError(err instanceof Error ? err.message : "Failed to load dashboard");
         setLoading(false);
       });
+
+  useEffect(() => {
+    loadData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const handleLogSale = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!data?.activeCompetition) return;
+    setLoggingSale(true);
+    try {
+      const res = await fetch(`/api/competitions/${data.activeCompetition.id}/log-sale`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ revenue: Number(saleRevenue), deals: Number(saleDeals) }),
+      });
+      if (res.ok) {
+        setSaleRevenue("");
+        setSaleDeals("1");
+        setSaleSuccess(true);
+        setTimeout(() => setSaleSuccess(false), 2000);
+        await loadData();
+      }
+    } finally {
+      setLoggingSale(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -155,6 +185,50 @@ export default function RepDashboardPage() {
           {data.kpis.map((kpi) => (
             <KPICard key={kpi.label} kpi={kpi} />
           ))}
+        </div>
+      )}
+
+      {/* Log Sale Card — active competition only */}
+      {data.activeCompetition && (
+        <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+          <h2 className="text-lg font-semibold tracking-tight mb-4">Log Sale</h2>
+          <form onSubmit={handleLogSale} className="flex flex-wrap items-end gap-4">
+            <div className="flex-1 min-w-[140px]">
+              <label className="block text-xs font-medium text-gray-500 mb-1">Revenue ($)</label>
+              <input
+                type="number"
+                min="0.01"
+                step="0.01"
+                required
+                value={saleRevenue}
+                onChange={(e) => setSaleRevenue(e.target.value)}
+                placeholder="5000"
+                className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-4 h-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+            <div className="w-28">
+              <label className="block text-xs font-medium text-gray-500 mb-1">Deals</label>
+              <input
+                type="number"
+                min="1"
+                step="1"
+                required
+                value={saleDeals}
+                onChange={(e) => setSaleDeals(e.target.value)}
+                className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-4 h-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={loggingSale}
+              className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white transition rounded-xl px-5 py-2.5 text-sm font-semibold"
+            >
+              {loggingSale ? "Logging..." : "Log Sale"}
+            </button>
+            {saleSuccess && (
+              <span className="text-emerald-600 text-sm font-medium">Sale logged!</span>
+            )}
+          </form>
         </div>
       )}
 

@@ -27,6 +27,13 @@ const baseColumns: Column<Competition>[] = [
     ),
   },
   {
+    key: "prize",
+    label: "Prize",
+    render: (v) => (
+      <span className="text-blue-600 font-mono">{formatCurrency(v as number)}</span>
+    ),
+  },
+  {
     key: "status",
     label: "Status",
     render: (v) => <StatusBadge status={v as CompetitionStatus} />,
@@ -44,6 +51,7 @@ export default function CompetitionsPage() {
   const [filter, setFilter] = useState<CompetitionStatus | "all">("all");
   const [showForm, setShowForm] = useState(false);
   const [newName, setNewName] = useState("");
+  const [newPrize, setNewPrize] = useState("");
   const [competitions, setCompetitions] = useState<Competition[]>([]);
   const [loading, setLoading] = useState(true);
   const [enrolledIds, setEnrolledIds] = useState<Set<number>>(new Set());
@@ -76,6 +84,7 @@ export default function CompetitionsPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         name: newName,
+        prize: newPrize ? Number(newPrize) : 0,
         startDate: new Date().toISOString().split("T")[0],
       }),
     });
@@ -83,6 +92,7 @@ export default function CompetitionsPage() {
       const created = await res.json();
       setCompetitions([...competitions, created]);
       setNewName("");
+      setNewPrize("");
       setShowForm(false);
     }
   };
@@ -168,6 +178,19 @@ export default function CompetitionsPage() {
               placeholder="e.g. Q3 Revenue Sprint"
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleCreate()}
+              className="bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 rounded-xl px-4 h-10 text-sm w-full focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+            />
+          </div>
+          <div className="w-40">
+            <label className="text-sm text-gray-500 block mb-1">Prize ($)</label>
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              placeholder="0"
+              value={newPrize}
+              onChange={(e) => setNewPrize(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleCreate()}
               className="bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 rounded-xl px-4 h-10 text-sm w-full focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
             />

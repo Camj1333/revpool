@@ -17,6 +17,7 @@ export interface Competition {
   leader: string;
   revenue: number;
   status: CompetitionStatus;
+  prize: number;
   startDate: string;
   endDate: string;
   participants: number;

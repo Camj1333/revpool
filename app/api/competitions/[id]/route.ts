@@ -9,7 +9,7 @@ export async function GET(
   try {
     const row = await withDb(async (client) => {
       const res = await client.query(
-        `SELECT c.id, c.name, c.leader, c.revenue, c.status,
+        `SELECT c.id, c.name, c.leader, c.revenue, c.status, c.prize,
                 c.start_date AS "startDate", c.end_date AS "endDate",
                 COUNT(cp.id)::int AS participants
          FROM competitions c

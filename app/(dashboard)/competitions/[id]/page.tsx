@@ -63,6 +63,10 @@ export default function CompetitionDetailPage({
   const [notFound, setNotFound] = useState(false);
   const [enrolled, setEnrolled] = useState(false);
   const [joining, setJoining] = useState(false);
+  const [saleRevenue, setSaleRevenue] = useState("");
+  const [saleDeals, setSaleDeals] = useState("1");
+  const [loggingSale, setLoggingSale] = useState(false);
+  const [saleSuccess, setSaleSuccess] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -88,18 +92,46 @@ export default function CompetitionDetailPage({
     }
   }, [role, id]);
 
+  const refreshData = async () => {
+    const [comp, parts] = await Promise.all([
+      apiFetch<Competition>(`/api/competitions/${id}`).catch(() => null),
+      apiFetch<Participant[]>(`/api/competitions/${id}/participants`).catch(() => []),
+    ]);
+    if (comp) setCompetition(comp);
+    setParticipants(parts);
+  };
+
   const handleJoin = async () => {
     setJoining(true);
     try {
       const res = await fetch(`/api/competitions/${id}/join`, { method: "POST" });
       if (res.ok || res.status === 409) {
         setEnrolled(true);
-        // Refresh participants
-        const parts = await apiFetch<Participant[]>(`/api/competitions/${id}/participants`).catch(() => []);
-        setParticipants(parts);
+        await refreshData();
       }
     } finally {
       setJoining(false);
+    }
+  };
+
+  const handleLogSale = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoggingSale(true);
+    try {
+      const res = await fetch(`/api/competitions/${id}/log-sale`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ revenue: Number(saleRevenue), deals: Number(saleDeals) }),
+      });
+      if (res.ok) {
+        setSaleRevenue("");
+        setSaleDeals("1");
+        setSaleSuccess(true);
+        setTimeout(() => setSaleSuccess(false), 2000);
+        await refreshData();
+      }
+    } finally {
+      setLoggingSale(false);
     }
   };
 
@@ -127,6 +159,7 @@ export default function CompetitionDetailPage({
 
   const kpis = [
     { label: "Total Revenue", value: formatCurrency(competition.revenue), change: 0, changeLabel: "vs last period" },
+    { label: "Prize", value: formatCurrency(competition.prize), change: 0, changeLabel: "" },
     { label: "Participants", value: String(competition.participants), change: 0, changeLabel: "vs last comp" },
     { label: "Avg per Rep", value: formatCurrency(competition.participants > 0 ? Math.round(competition.revenue / competition.participants) : 0), change: 0, changeLabel: "vs last comp" },
   ];
@@ -169,8 +202,52 @@ export default function CompetitionDetailPage({
         {competition.startDate} &mdash; {competition.endDate || "TBD"}
       </p>
 
+      {/* Log Sale Form — enrolled reps only */}
+      {role === "rep" && enrolled && (
+        <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+          <h2 className="text-lg font-semibold tracking-tight mb-4">Log Sale</h2>
+          <form onSubmit={handleLogSale} className="flex flex-wrap items-end gap-4">
+            <div className="flex-1 min-w-[140px]">
+              <label className="block text-xs font-medium text-gray-500 mb-1">Revenue ($)</label>
+              <input
+                type="number"
+                min="0.01"
+                step="0.01"
+                required
+                value={saleRevenue}
+                onChange={(e) => setSaleRevenue(e.target.value)}
+                placeholder="5000"
+                className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-4 h-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+            <div className="w-28">
+              <label className="block text-xs font-medium text-gray-500 mb-1">Deals</label>
+              <input
+                type="number"
+                min="1"
+                step="1"
+                required
+                value={saleDeals}
+                onChange={(e) => setSaleDeals(e.target.value)}
+                className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-4 h-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={loggingSale}
+              className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white transition rounded-xl px-5 py-2.5 text-sm font-semibold"
+            >
+              {loggingSale ? "Logging..." : "Log Sale"}
+            </button>
+            {saleSuccess && (
+              <span className="text-emerald-600 text-sm font-medium">Sale logged!</span>
+            )}
+          </form>
+        </div>
+      )}
+
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {kpis.map((kpi) => (
           <KPICard key={kpi.label} kpi={kpi} />
         ))}
