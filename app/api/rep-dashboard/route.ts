@@ -17,7 +17,7 @@ export async function GET() {
         (session.user as Record<string, unknown>).participantId as number | null,
         session.user!.name || "Unknown"
       );
-      // Get active competition info for this rep
+      // Get all active competitions this rep is enrolled in
       const activeCompRes = await client.query(`
         SELECT c.id, c.name, c.end_date,
                cp.revenue, cp.deals, cp.rank,
@@ -26,10 +26,10 @@ export async function GET() {
         JOIN competition_participants cp ON cp.competition_id = c.id AND cp.participant_id = $1
         WHERE c.status = 'active'
         ORDER BY c.end_date ASC
-        LIMIT 1
       `, [participantId]);
 
-      const activeComp = activeCompRes.rows[0] || null;
+      const activeComps = activeCompRes.rows;
+      const activeComp = activeComps[0] || null;
 
       // Get total revenue across all competitions for this rep
       const totalRes = await client.query(`
@@ -116,13 +116,13 @@ export async function GET() {
 
       return {
         userName: session.user!.name,
-        activeCompetition: activeComp ? {
-          id: activeComp.id,
-          name: activeComp.name,
-          endDate: activeComp.end_date,
-          rank: activeComp.rank,
-          totalParticipants: activeComp.total_participants,
-        } : null,
+        activeCompetitions: activeComps.map((c: Record<string, unknown>) => ({
+          id: c.id,
+          name: c.name,
+          endDate: c.end_date,
+          rank: c.rank,
+          totalParticipants: c.total_participants,
+        })),
         kpis,
         history: historyRes.rows,
         leaderboard,

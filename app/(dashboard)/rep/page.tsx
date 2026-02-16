@@ -9,15 +9,17 @@ import { formatCurrency } from "@/lib/format";
 import { apiFetch } from "@/lib/api";
 import { KPI, ChartDataPoint, Participant, Column } from "@/lib/types";
 
+interface ActiveCompetition {
+  id: number;
+  name: string;
+  endDate: string;
+  rank: number;
+  totalParticipants: number;
+}
+
 interface RepDashboardData {
   userName: string;
-  activeCompetition: {
-    id: number;
-    name: string;
-    endDate: string;
-    rank: number;
-    totalParticipants: number;
-  } | null;
+  activeCompetitions: ActiveCompetition[];
   kpis: KPI[];
   history: ChartDataPoint[];
   leaderboard: Participant[];
@@ -85,14 +87,81 @@ function CountdownTimer({ endDate }: { endDate: string }) {
   );
 }
 
+function LogSaleCard({ competition, onSaleLogged }: { competition: ActiveCompetition; onSaleLogged: () => void }) {
+  const [revenue, setRevenue] = useState("");
+  const [deals, setDeals] = useState("1");
+  const [logging, setLogging] = useState(false);
+  const [success, setSuccess] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLogging(true);
+    try {
+      const res = await fetch(`/api/competitions/${competition.id}/log-sale`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ revenue: Number(revenue), deals: Number(deals) }),
+      });
+      if (res.ok) {
+        setRevenue("");
+        setDeals("1");
+        setSuccess(true);
+        setTimeout(() => setSuccess(false), 2000);
+        await onSaleLogged();
+      }
+    } finally {
+      setLogging(false);
+    }
+  };
+
+  return (
+    <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+      <h2 className="text-lg font-semibold tracking-tight mb-4">{competition.name}</h2>
+      <form onSubmit={handleSubmit} className="flex flex-wrap items-end gap-4">
+        <div className="flex-1 min-w-[140px]">
+          <label className="block text-xs font-medium text-gray-500 mb-1">Revenue ($)</label>
+          <input
+            type="number"
+            min="0.01"
+            step="0.01"
+            required
+            value={revenue}
+            onChange={(e) => setRevenue(e.target.value)}
+            placeholder="5000"
+            className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-4 h-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+        </div>
+        <div className="w-28">
+          <label className="block text-xs font-medium text-gray-500 mb-1">Deals</label>
+          <input
+            type="number"
+            min="1"
+            step="1"
+            required
+            value={deals}
+            onChange={(e) => setDeals(e.target.value)}
+            className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-4 h-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+        </div>
+        <button
+          type="submit"
+          disabled={logging}
+          className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white transition rounded-xl px-5 py-2.5 text-sm font-semibold"
+        >
+          {logging ? "Logging..." : "Log Sale"}
+        </button>
+        {success && (
+          <span className="text-emerald-600 text-sm font-medium">Sale logged!</span>
+        )}
+      </form>
+    </div>
+  );
+}
+
 export default function RepDashboardPage() {
   const [data, setData] = useState<RepDashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [saleRevenue, setSaleRevenue] = useState("");
-  const [saleDeals, setSaleDeals] = useState("1");
-  const [loggingSale, setLoggingSale] = useState(false);
-  const [saleSuccess, setSaleSuccess] = useState(false);
 
   const loadData = () =>
     apiFetch<RepDashboardData>("/api/rep-dashboard")
@@ -109,28 +178,6 @@ export default function RepDashboardPage() {
     loadData();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  const handleLogSale = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!data?.activeCompetition) return;
-    setLoggingSale(true);
-    try {
-      const res = await fetch(`/api/competitions/${data.activeCompetition.id}/log-sale`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ revenue: Number(saleRevenue), deals: Number(saleDeals) }),
-      });
-      if (res.ok) {
-        setSaleRevenue("");
-        setSaleDeals("1");
-        setSaleSuccess(true);
-        setTimeout(() => setSaleSuccess(false), 2000);
-        await loadData();
-      }
-    } finally {
-      setLoggingSale(false);
-    }
-  };
 
   if (loading) {
     return (
@@ -161,6 +208,8 @@ export default function RepDashboardPage() {
   })();
 
   const firstName = data.userName?.split(" ")[0] || "there";
+  const hasActive = data.activeCompetitions.length > 0;
+  const nearestEnding = hasActive ? data.activeCompetitions[0] : null;
 
   return (
     <div className="space-y-10">
@@ -168,12 +217,14 @@ export default function RepDashboardPage() {
       <div className="flex items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">{greeting}, {firstName}</h1>
-          {data.activeCompetition && (
-            <div className="flex items-center gap-2 mt-2">
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-600 border border-emerald-200">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                {data.activeCompetition.name}
-              </span>
+          {hasActive && (
+            <div className="flex items-center gap-2 mt-2 flex-wrap">
+              {data.activeCompetitions.map((comp) => (
+                <span key={comp.id} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-600 border border-emerald-200">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                  {comp.name}
+                </span>
+              ))}
             </div>
           )}
         </div>
@@ -188,52 +239,18 @@ export default function RepDashboardPage() {
         </div>
       )}
 
-      {/* Log Sale Card — active competition only */}
-      {data.activeCompetition && (
-        <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
-          <h2 className="text-lg font-semibold tracking-tight mb-4">Log Sale</h2>
-          <form onSubmit={handleLogSale} className="flex flex-wrap items-end gap-4">
-            <div className="flex-1 min-w-[140px]">
-              <label className="block text-xs font-medium text-gray-500 mb-1">Revenue ($)</label>
-              <input
-                type="number"
-                min="0.01"
-                step="0.01"
-                required
-                value={saleRevenue}
-                onChange={(e) => setSaleRevenue(e.target.value)}
-                placeholder="5000"
-                className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-4 h-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-            <div className="w-28">
-              <label className="block text-xs font-medium text-gray-500 mb-1">Deals</label>
-              <input
-                type="number"
-                min="1"
-                step="1"
-                required
-                value={saleDeals}
-                onChange={(e) => setSaleDeals(e.target.value)}
-                className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-4 h-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-            <button
-              type="submit"
-              disabled={loggingSale}
-              className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white transition rounded-xl px-5 py-2.5 text-sm font-semibold"
-            >
-              {loggingSale ? "Logging..." : "Log Sale"}
-            </button>
-            {saleSuccess && (
-              <span className="text-emerald-600 text-sm font-medium">Sale logged!</span>
-            )}
-          </form>
+      {/* Log Sale Cards — one per active competition */}
+      {hasActive && (
+        <div className="space-y-4">
+          <h2 className="text-lg font-semibold tracking-tight">Log Sale</h2>
+          {data.activeCompetitions.map((comp) => (
+            <LogSaleCard key={comp.id} competition={comp} onSaleLogged={loadData} />
+          ))}
         </div>
       )}
 
       {/* No active competition prompt */}
-      {!data.activeCompetition && (
+      {!hasActive && (
         <div className="bg-white border border-gray-200 rounded-2xl p-8 shadow-[0_1px_3px_rgba(0,0,0,0.04)] text-center">
           <p className="text-gray-500 mb-4">You haven&apos;t joined any active competitions yet.</p>
           <Link
@@ -245,9 +262,9 @@ export default function RepDashboardPage() {
         </div>
       )}
 
-      {/* Countdown Timer */}
-      {data.activeCompetition && (
-        <CountdownTimer endDate={data.activeCompetition.endDate} />
+      {/* Countdown Timer — nearest ending competition */}
+      {nearestEnding && (
+        <CountdownTimer endDate={nearestEnding.endDate} />
       )}
 
       {/* Performance History */}
