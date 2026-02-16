@@ -31,6 +31,80 @@ export async function GET(
   }
 }
 
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const user = session.user as any;
+  if (user.role !== "manager") {
+    return NextResponse.json({ error: "Only managers can edit competitions" }, { status: 403 });
+  }
+
+  const { id } = await params;
+  const body = await req.json();
+
+  const allowedFields: Record<string, string> = {
+    name: "name",
+    prize: "prize",
+    status: "status",
+    startDate: "start_date",
+    endDate: "end_date",
+  };
+
+  const setClauses: string[] = [];
+  const values: unknown[] = [];
+  let paramIndex = 1;
+
+  for (const [key, column] of Object.entries(allowedFields)) {
+    if (body[key] !== undefined) {
+      setClauses.push(`${column} = $${paramIndex}`);
+      values.push(body[key]);
+      paramIndex++;
+    }
+  }
+
+  if (setClauses.length === 0) {
+    return NextResponse.json({ error: "No fields to update" }, { status: 400 });
+  }
+
+  values.push(id);
+
+  try {
+    const row = await withDb(async (client) => {
+      await client.query(
+        `UPDATE competitions SET ${setClauses.join(", ")} WHERE id = $${paramIndex}`,
+        values
+      );
+      const res = await client.query(
+        `SELECT c.id, c.name, c.leader, c.revenue, c.status, c.prize,
+                c.start_date AS "startDate", c.end_date AS "endDate",
+                COUNT(cp.id)::int AS participants
+         FROM competitions c
+         LEFT JOIN competition_participants cp ON cp.competition_id = c.id
+         WHERE c.id = $1
+         GROUP BY c.id`,
+        [id]
+      );
+      return res.rows[0] || null;
+    });
+
+    if (!row) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+
+    return NextResponse.json(row);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+
 export async function DELETE(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }

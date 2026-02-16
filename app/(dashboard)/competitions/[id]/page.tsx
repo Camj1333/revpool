@@ -67,6 +67,13 @@ export default function CompetitionDetailPage({
   const [saleDeals, setSaleDeals] = useState("1");
   const [loggingSale, setLoggingSale] = useState(false);
   const [saleSuccess, setSaleSuccess] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [editPrize, setEditPrize] = useState("");
+  const [editStatus, setEditStatus] = useState("");
+  const [editStartDate, setEditStartDate] = useState("");
+  const [editEndDate, setEditEndDate] = useState("");
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -135,6 +142,40 @@ export default function CompetitionDetailPage({
     }
   };
 
+  const openEditForm = () => {
+    if (!competition) return;
+    setEditName(competition.name);
+    setEditPrize(String(competition.prize));
+    setEditStatus(competition.status);
+    setEditStartDate(competition.startDate || "");
+    setEditEndDate(competition.endDate || "");
+    setEditing(true);
+  };
+
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/competitions/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: editName,
+          prize: Number(editPrize),
+          status: editStatus,
+          startDate: editStartDate || null,
+          endDate: editEndDate || null,
+        }),
+      });
+      if (res.ok) {
+        await refreshData();
+        setEditing(false);
+      }
+    } finally {
+      setSaving(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="space-y-4">
@@ -181,6 +222,14 @@ export default function CompetitionDetailPage({
       <div className="flex items-center gap-4">
         <h1 className="text-3xl font-bold tracking-tight">{competition.name}</h1>
         <StatusBadge status={competition.status} />
+        {role === "manager" && (
+          <button
+            onClick={openEditForm}
+            className="text-blue-600 hover:text-blue-700 transition text-sm font-semibold"
+          >
+            Edit
+          </button>
+        )}
         {role === "rep" && (
           enrolled ? (
             <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-600 border border-emerald-200">
@@ -201,6 +250,85 @@ export default function CompetitionDetailPage({
       <p className="text-gray-500 text-sm">
         {competition.startDate} &mdash; {competition.endDate || "TBD"}
       </p>
+
+      {/* Edit Competition Form — managers only */}
+      {role === "manager" && editing && (
+        <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+          <h2 className="text-lg font-semibold tracking-tight mb-4">Edit Competition</h2>
+          <form onSubmit={handleSaveEdit} className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Name</label>
+                <input
+                  type="text"
+                  required
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-4 h-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Prize ($)</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  required
+                  value={editPrize}
+                  onChange={(e) => setEditPrize(e.target.value)}
+                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-4 h-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Status</label>
+                <select
+                  value={editStatus}
+                  onChange={(e) => setEditStatus(e.target.value)}
+                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-4 h-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="upcoming">Upcoming</option>
+                  <option value="active">Active</option>
+                  <option value="completed">Completed</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Start Date</label>
+                <input
+                  type="date"
+                  value={editStartDate}
+                  onChange={(e) => setEditStartDate(e.target.value)}
+                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-4 h-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">End Date</label>
+                <input
+                  type="date"
+                  value={editEndDate}
+                  onChange={(e) => setEditEndDate(e.target.value)}
+                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-4 h-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                type="submit"
+                disabled={saving}
+                className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white transition rounded-xl px-5 py-2.5 text-sm font-semibold"
+              >
+                {saving ? "Saving..." : "Save"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setEditing(false)}
+                className="text-gray-500 hover:text-gray-700 transition text-sm font-medium"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
 
       {/* Log Sale Form — enrolled reps only */}
       {role === "rep" && enrolled && (
