@@ -86,7 +86,9 @@ export function Sidebar({ open, onClose, role, userName }: SidebarProps) {
           <span className="w-2 h-2 rounded-full bg-blue-500" />
           <h1 className="text-lg font-bold tracking-tight text-white">RevPool</h1>
         </div>
-        <p className="text-[11px] uppercase tracking-widest text-gray-500 mt-1 pl-4">Competition Manager</p>
+        {role === "manager" && (
+          <p className="text-[11px] uppercase tracking-widest text-gray-500 mt-1 pl-4">Competition Manager</p>
+        )}
       </div>
       <div className="flex flex-col gap-1">
         {navItems.map((item) => (
