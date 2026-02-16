@@ -60,9 +60,8 @@ export async function GET() {
         : 0;
 
       const kpis = [
-        { label: "Team Quota Attainment", value: `${quotaAttainment}%`, change: 0, changeLabel: "vs target" },
         { label: "Participation Rate", value: `${participationRate}%`, change: 0, changeLabel: "of team enrolled" },
-        { label: "Revenue Impact", value: formatCurrency(Number(activeRevenueRes.rows[0].total)), change: 0, changeLabel: "active competitions" },
+        { label: "Active Revenue", value: formatCurrency(Number(activeRevenueRes.rows[0].total)), change: 0, changeLabel: "active competitions" },
         { label: "Active Pools", value: String(activePoolsRes.rows[0].count), change: 0, changeLabel: "running now" },
       ];
 

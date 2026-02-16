@@ -32,6 +32,14 @@ export function BarChart({ data, height = 300 }: BarChartProps) {
           <filter id="tooltip-shadow" x="-20%" y="-20%" width="140%" height="140%">
             <feDropShadow dx="0" dy="1" stdDeviation="2" floodOpacity="0.1" />
           </filter>
+          <linearGradient id="bar-gradient" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#60a5fa" />
+            <stop offset="100%" stopColor="#4f46e5" />
+          </linearGradient>
+          <linearGradient id="bar-gradient-hover" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#93c5fd" />
+            <stop offset="100%" stopColor="#6366f1" />
+          </linearGradient>
         </defs>
 
         {/* Grid lines */}
@@ -79,9 +87,8 @@ export function BarChart({ data, height = 300 }: BarChartProps) {
                 width={w}
                 height={barHeight}
                 rx={6}
-                className={`transition-all duration-150 ${
-                  hovered === i ? "fill-blue-600" : "fill-blue-500"
-                }`}
+                fill={hovered === i ? "url(#bar-gradient-hover)" : "url(#bar-gradient)"}
+                className="transition-all duration-150"
               />
               {/* X label */}
               <text

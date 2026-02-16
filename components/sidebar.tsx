@@ -84,9 +84,9 @@ export function Sidebar({ open, onClose, role, userName }: SidebarProps) {
       <div className="px-4 mb-8">
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-blue-500" />
-          <h1 className="text-lg font-bold tracking-tight">RevPool</h1>
+          <h1 className="text-lg font-bold tracking-tight text-white">RevPool</h1>
         </div>
-        <p className="text-[11px] uppercase tracking-widest text-gray-400 mt-1 pl-4">Competition Manager</p>
+        <p className="text-[11px] uppercase tracking-widest text-gray-500 mt-1 pl-4">Competition Manager</p>
       </div>
       <div className="flex flex-col gap-1">
         {navItems.map((item) => (
@@ -97,7 +97,7 @@ export function Sidebar({ open, onClose, role, userName }: SidebarProps) {
             className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition ${
               isActive(item.href)
                 ? "bg-blue-600 text-white shadow-sm"
-                : "text-gray-500 hover:text-gray-900 hover:bg-gray-100/80"
+                : "text-gray-400 hover:text-white hover:bg-white/10"
             }`}
           >
             {item.icon}
@@ -105,14 +105,14 @@ export function Sidebar({ open, onClose, role, userName }: SidebarProps) {
           </Link>
         ))}
       </div>
-      <div className="mt-auto border-t border-gray-100 pt-4 px-4">
+      <div className="mt-auto border-t border-gray-800 pt-4 px-4">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-sm font-medium text-white">
             {initials}
           </div>
           <div>
-            <p className="text-sm font-medium text-gray-900">{userName}</p>
-            <p className="text-xs text-gray-400">{roleLabel}</p>
+            <p className="text-sm font-medium text-white">{userName}</p>
+            <p className="text-xs text-gray-500">{roleLabel}</p>
           </div>
         </div>
       </div>
@@ -122,7 +122,7 @@ export function Sidebar({ open, onClose, role, userName }: SidebarProps) {
   return (
     <>
       {/* Desktop sidebar */}
-      <aside className="hidden lg:flex lg:fixed lg:inset-y-0 lg:left-0 lg:w-72 lg:flex-col bg-white border-r border-gray-200 z-30">
+      <aside className="hidden lg:flex lg:fixed lg:inset-y-0 lg:left-0 lg:w-72 lg:flex-col bg-gradient-to-b from-gray-900 to-gray-950 border-r border-gray-800 z-30">
         {nav}
       </aside>
 
@@ -133,7 +133,7 @@ export function Sidebar({ open, onClose, role, userName }: SidebarProps) {
             className="fixed inset-0 bg-black/30 z-40 lg:hidden"
             onClick={onClose}
           />
-          <aside className="fixed inset-y-0 left-0 w-72 bg-white border-r border-gray-200 z-50 lg:hidden">
+          <aside className="fixed inset-y-0 left-0 w-72 bg-gradient-to-b from-gray-900 to-gray-950 border-r border-gray-800 z-50 lg:hidden">
             {nav}
           </aside>
         </>

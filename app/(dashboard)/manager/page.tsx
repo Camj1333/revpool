@@ -112,8 +112,8 @@ export default function ManagerDashboardPage() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {data.kpis.map((kpi) => (
-          <KPICard key={kpi.label} kpi={kpi} />
+        {data.kpis.map((kpi, i) => (
+          <KPICard key={kpi.label} kpi={kpi} accentColor={["border-l-blue-500", "border-l-emerald-500", "border-l-violet-500", "border-l-amber-500"][i % 4]} />
         ))}
       </div>
 

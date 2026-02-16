@@ -42,6 +42,10 @@ export function LineChart({ data, height = 300 }: LineChartProps) {
           <filter id="line-tooltip-shadow" x="-20%" y="-20%" width="140%" height="140%">
             <feDropShadow dx="0" dy="1" stdDeviation="2" floodOpacity="0.1" />
           </filter>
+          <linearGradient id="line-area-gradient" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.3" />
+            <stop offset="100%" stopColor="#3b82f6" stopOpacity="0" />
+          </linearGradient>
         </defs>
 
         {/* Grid lines */}
@@ -82,6 +86,14 @@ export function LineChart({ data, height = 300 }: LineChartProps) {
             {d.label}
           </text>
         ))}
+
+        {/* Area fill */}
+        {points.length > 0 && (
+          <polygon
+            points={`${points[0].x},${padding.top + innerHeight} ${polylinePoints} ${points[points.length - 1].x},${padding.top + innerHeight}`}
+            fill="url(#line-area-gradient)"
+          />
+        )}
 
         {/* Line */}
         <polyline

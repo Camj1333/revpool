@@ -12,7 +12,7 @@ export function StatusBadge({ status }: { status: CompetitionStatus }) {
     <span
       className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium ${style.bg}`}
     >
-      <span className={`w-1.5 h-1.5 rounded-full ${style.dot}`} />
+      <span className={`w-1.5 h-1.5 rounded-full ${style.dot}${status === "active" ? " animate-pulse" : ""}`} />
       {status.charAt(0).toUpperCase() + status.slice(1)}
     </span>
   );

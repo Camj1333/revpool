@@ -80,28 +80,31 @@ export async function GET() {
         return `$${n.toFixed(0)}`;
       }
 
+      // Total prize amount from all active competitions this rep is in
+      const poolValueRes = await client.query(`
+        SELECT COALESCE(SUM(c.prize), 0)::numeric AS total_prize
+        FROM competitions c
+        JOIN competition_participants cp ON cp.competition_id = c.id AND cp.participant_id = $1
+        WHERE c.status = 'active'
+      `, [participantId]);
+      const poolValue = Number(poolValueRes.rows[0].total_prize);
+
       const totalRevenue = Number(totalRes.rows[0].total_revenue);
       const globalRank = globalRankRes.rows[0]?.rank ?? 0;
       const totalParts = totalParticipantsRes.rows[0].count;
 
       const kpis = [
         {
-          label: "Quota Progress",
-          value: activeComp ? formatCurrency(Number(activeComp.revenue)) : "$0",
-          change: 0,
-          changeLabel: activeComp ? `in ${activeComp.name}` : "no active competition",
-        },
-        {
-          label: "Committed Amount",
+          label: "Total Revenue",
           value: formatCurrency(totalRevenue),
           change: 0,
           changeLabel: "all-time total",
         },
         {
           label: "Pool Value",
-          value: activeComp ? formatCurrency(Number(activeComp.revenue) * 0.15) : "$0",
+          value: formatCurrency(poolValue),
           change: 0,
-          changeLabel: "estimated payout",
+          changeLabel: "total prize pool",
         },
         {
           label: "Leaderboard Position",
