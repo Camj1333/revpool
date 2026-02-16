@@ -45,6 +45,25 @@ export interface ChartDataPoint {
   value: number;
 }
 
+export interface FundingTransaction {
+  id: number;
+  competitionId: number;
+  userName: string;
+  amount: number;
+  createdAt: string;
+}
+
+export type WithdrawalStatus = "pending" | "approved" | "paid";
+
+export interface PrizeWithdrawal {
+  id: number;
+  competitionId: number;
+  userName: string;
+  amount: number;
+  status: WithdrawalStatus;
+  createdAt: string;
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export interface Column<T = any> {
   key: keyof T & string;

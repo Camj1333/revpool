@@ -45,6 +45,25 @@ CREATE TABLE IF NOT EXISTS users (
   participant_id INTEGER REFERENCES participants(id) ON DELETE SET NULL,
   created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+CREATE TABLE IF NOT EXISTS competition_funding (
+  id              SERIAL PRIMARY KEY,
+  competition_id  INTEGER NOT NULL REFERENCES competitions(id) ON DELETE CASCADE,
+  user_id         INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  amount          NUMERIC NOT NULL CHECK (amount > 0),
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS prize_withdrawals (
+  id              SERIAL PRIMARY KEY,
+  competition_id  INTEGER NOT NULL REFERENCES competitions(id) ON DELETE CASCADE,
+  user_id         INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  amount          NUMERIC NOT NULL CHECK (amount > 0),
+  status          TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'paid')),
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (competition_id, user_id)
+);
 `;
 
 const MIGRATIONS = `

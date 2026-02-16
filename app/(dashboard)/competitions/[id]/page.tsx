@@ -9,7 +9,7 @@ import { DataTable } from "@/components/data-table";
 import { StatusBadge } from "@/components/status-badge";
 import { formatCurrency } from "@/lib/format";
 import { apiFetch } from "@/lib/api";
-import { Competition, Participant, Column, ChartDataPoint } from "@/lib/types";
+import { Competition, Participant, Column, ChartDataPoint, FundingTransaction, PrizeWithdrawal } from "@/lib/types";
 
 const participantColumns: Column<Participant>[] = [
   { key: "rank", label: "#" },
@@ -75,6 +75,17 @@ export default function CompetitionDetailPage({
   const [editEndDate, setEditEndDate] = useState("");
   const [saving, setSaving] = useState(false);
 
+  // Funding state
+  const [fundAmount, setFundAmount] = useState("");
+  const [funding, setFunding] = useState(false);
+  const [fundSuccess, setFundSuccess] = useState(false);
+  const [fundingHistory, setFundingHistory] = useState<FundingTransaction[]>([]);
+
+  // Withdrawal state
+  const [withdrawals, setWithdrawals] = useState<PrizeWithdrawal[]>([]);
+  const [requestingWithdraw, setRequestingWithdraw] = useState(false);
+  const [withdrawRequested, setWithdrawRequested] = useState(false);
+
   useEffect(() => {
     Promise.all([
       apiFetch<Competition>(`/api/competitions/${id}`).catch(() => null),
@@ -99,6 +110,12 @@ export default function CompetitionDetailPage({
     }
   }, [role, id]);
 
+  // Load funding history and withdrawals
+  useEffect(() => {
+    apiFetch<FundingTransaction[]>(`/api/competitions/${id}/funding`).catch(() => []).then(setFundingHistory);
+    apiFetch<PrizeWithdrawal[]>(`/api/competitions/${id}/withdrawal`).catch(() => []).then(setWithdrawals);
+  }, [id]);
+
   const refreshData = async () => {
     const [comp, parts] = await Promise.all([
       apiFetch<Competition>(`/api/competitions/${id}`).catch(() => null),
@@ -106,6 +123,16 @@ export default function CompetitionDetailPage({
     ]);
     if (comp) setCompetition(comp);
     setParticipants(parts);
+  };
+
+  const refreshFunding = async () => {
+    const rows = await apiFetch<FundingTransaction[]>(`/api/competitions/${id}/funding`).catch(() => []);
+    setFundingHistory(rows);
+  };
+
+  const refreshWithdrawals = async () => {
+    const rows = await apiFetch<PrizeWithdrawal[]>(`/api/competitions/${id}/withdrawal`).catch(() => []);
+    setWithdrawals(rows);
   };
 
   const handleJoin = async () => {
@@ -176,6 +203,62 @@ export default function CompetitionDetailPage({
     }
   };
 
+  const handleFund = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFunding(true);
+    try {
+      const res = await fetch(`/api/competitions/${id}/fund`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount: Number(fundAmount) }),
+      });
+      if (res.ok) {
+        setFundAmount("");
+        setFundSuccess(true);
+        setTimeout(() => setFundSuccess(false), 2000);
+        await Promise.all([refreshData(), refreshFunding()]);
+      }
+    } finally {
+      setFunding(false);
+    }
+  };
+
+  const handleRequestWithdraw = async () => {
+    setRequestingWithdraw(true);
+    try {
+      const res = await fetch(`/api/competitions/${id}/withdraw`, { method: "POST" });
+      if (res.ok || res.status === 409) {
+        setWithdrawRequested(true);
+        await refreshWithdrawals();
+      }
+    } finally {
+      setRequestingWithdraw(false);
+    }
+  };
+
+  const handleUpdateWithdrawal = async (withdrawalId: number, status: string) => {
+    const res = await fetch(`/api/competitions/${id}/withdrawal`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ withdrawalId, status }),
+    });
+    if (res.ok) {
+      await refreshWithdrawals();
+    }
+  };
+
+  // Check if current rep already has a withdrawal
+  const userId = (session?.user as Record<string, unknown> | undefined)?.id as number | undefined;
+  const myWithdrawal = withdrawals.find(
+    (w) => w.userName === (session?.user as Record<string, unknown> | undefined)?.name
+  );
+
+  // Check if current rep is rank 1
+  const participantId = (session?.user as Record<string, unknown> | undefined)?.participantId as number | undefined;
+  const isWinner = participants.some(
+    (p) => Number(p.id) === participantId && p.rank === 1
+  );
+
   if (loading) {
     return (
       <div className="space-y-4">
@@ -209,6 +292,19 @@ export default function CompetitionDetailPage({
   const revenueHistory: ChartDataPoint[] = participants.length > 0
     ? participants.slice(0, 8).map((p) => ({ label: p.name.split(" ")[0], value: Number(p.revenue) }))
     : [];
+
+  const withdrawalStatusBadge = (status: string) => {
+    const colors: Record<string, string> = {
+      pending: "bg-yellow-50 text-yellow-700 border-yellow-200",
+      approved: "bg-blue-50 text-blue-700 border-blue-200",
+      paid: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    };
+    return (
+      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border ${colors[status] || ""}`}>
+        {status}
+      </span>
+    );
+  };
 
   return (
     <div className="space-y-8">
@@ -330,6 +426,57 @@ export default function CompetitionDetailPage({
         </div>
       )}
 
+      {/* Fund Competition — managers only */}
+      {role === "manager" && (
+        <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+          <h2 className="text-lg font-semibold tracking-tight mb-4">Fund Competition</h2>
+          <form onSubmit={handleFund} className="flex flex-wrap items-end gap-4">
+            <div className="flex-1 min-w-[140px]">
+              <label className="block text-xs font-medium text-gray-500 mb-1">Amount ($)</label>
+              <input
+                type="number"
+                min="0.01"
+                step="0.01"
+                required
+                value={fundAmount}
+                onChange={(e) => setFundAmount(e.target.value)}
+                placeholder="500"
+                className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-4 h-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={funding}
+              className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white transition rounded-xl px-5 py-2.5 text-sm font-semibold"
+            >
+              {funding ? "Funding..." : "Fund"}
+            </button>
+            {fundSuccess && (
+              <span className="text-emerald-600 text-sm font-medium">Funded!</span>
+            )}
+          </form>
+
+          {/* Funding History */}
+          {fundingHistory.length > 0 && (
+            <div className="mt-6">
+              <h3 className="text-sm font-semibold text-gray-700 mb-2">Funding History</h3>
+              <div className="space-y-2">
+                {fundingHistory.map((tx) => (
+                  <div key={tx.id} className="flex items-center justify-between text-sm py-2 border-b border-gray-100 last:border-0">
+                    <div className="text-gray-600">
+                      <span className="font-medium text-gray-900">{tx.userName}</span>
+                      {" "}funded{" "}
+                      <span className="font-mono text-emerald-600">{formatCurrency(Number(tx.amount))}</span>
+                    </div>
+                    <span className="text-gray-400 text-xs">{new Date(tx.createdAt).toLocaleDateString()}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Log Sale Form — enrolled reps only */}
       {role === "rep" && enrolled && (
         <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
@@ -371,6 +518,66 @@ export default function CompetitionDetailPage({
               <span className="text-emerald-600 text-sm font-medium">Sale logged!</span>
             )}
           </form>
+        </div>
+      )}
+
+      {/* Withdrawal Request — rep who is rank 1 on completed competition */}
+      {role === "rep" && competition.status === "completed" && isWinner && (
+        <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+          <h2 className="text-lg font-semibold tracking-tight mb-4">Prize Withdrawal</h2>
+          {myWithdrawal || withdrawRequested ? (
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-gray-600">Withdrawal requested:</span>
+              {withdrawalStatusBadge(myWithdrawal?.status || "pending")}
+              {myWithdrawal && (
+                <span className="text-sm font-mono text-gray-700">{formatCurrency(Number(myWithdrawal.amount))}</span>
+              )}
+            </div>
+          ) : (
+            <button
+              onClick={handleRequestWithdraw}
+              disabled={requestingWithdraw}
+              className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white transition rounded-xl px-5 py-2.5 text-sm font-semibold"
+            >
+              {requestingWithdraw ? "Requesting..." : `Request Withdrawal (${formatCurrency(competition.prize)})`}
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Withdrawal Requests — managers only */}
+      {role === "manager" && withdrawals.length > 0 && (
+        <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+          <h2 className="text-lg font-semibold tracking-tight mb-4">Withdrawal Requests</h2>
+          <div className="space-y-3">
+            {withdrawals.map((w) => (
+              <div key={w.id} className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
+                <div className="flex items-center gap-3">
+                  <span className="font-medium text-gray-900 text-sm">{w.userName}</span>
+                  <span className="font-mono text-sm text-gray-700">{formatCurrency(Number(w.amount))}</span>
+                  {withdrawalStatusBadge(w.status)}
+                </div>
+                <div className="flex items-center gap-2">
+                  {w.status === "pending" && (
+                    <button
+                      onClick={() => handleUpdateWithdrawal(w.id, "approved")}
+                      className="bg-blue-600 hover:bg-blue-700 text-white transition rounded-lg px-3 py-1.5 text-xs font-semibold"
+                    >
+                      Approve
+                    </button>
+                  )}
+                  {(w.status === "pending" || w.status === "approved") && (
+                    <button
+                      onClick={() => handleUpdateWithdrawal(w.id, "paid")}
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white transition rounded-lg px-3 py-1.5 text-xs font-semibold"
+                    >
+                      Mark Paid
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
