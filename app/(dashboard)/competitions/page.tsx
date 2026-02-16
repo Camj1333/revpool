@@ -52,6 +52,9 @@ export default function CompetitionsPage() {
   const [showForm, setShowForm] = useState(false);
   const [newName, setNewName] = useState("");
   const [newPrize, setNewPrize] = useState("");
+  const [newStartDate, setNewStartDate] = useState(new Date().toISOString().split("T")[0]);
+  const [newEndDate, setNewEndDate] = useState("");
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [competitions, setCompetitions] = useState<Competition[]>([]);
   const [loading, setLoading] = useState(true);
   const [enrolledIds, setEnrolledIds] = useState<Set<number>>(new Set());
@@ -85,7 +88,8 @@ export default function CompetitionsPage() {
       body: JSON.stringify({
         name: newName,
         prize: newPrize ? Number(newPrize) : 0,
-        startDate: new Date().toISOString().split("T")[0],
+        startDate: newStartDate || null,
+        endDate: newEndDate || null,
       }),
     });
     if (res.ok) {
@@ -93,6 +97,8 @@ export default function CompetitionsPage() {
       setCompetitions([...competitions, created]);
       setNewName("");
       setNewPrize("");
+      setNewStartDate(new Date().toISOString().split("T")[0]);
+      setNewEndDate("");
       setShowForm(false);
     }
   };
@@ -111,40 +117,80 @@ export default function CompetitionsPage() {
     }
   };
 
-  // Add action column for reps
-  const columns: Column<Competition>[] =
-    role === "rep"
-      ? [
-          ...baseColumns,
-          {
-            key: "id" as keyof Competition & string,
-            label: "",
-            sortable: false,
-            render: (v) => {
-              const compId = String(v);
-              if (enrolledIds.has(Number(compId))) {
-                return (
-                  <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-600 border border-emerald-200">
-                    Joined
-                  </span>
-                );
-              }
+  const handleDelete = async (competitionId: string) => {
+    if (!confirm("Are you sure you want to delete this competition?")) return;
+    setDeletingId(competitionId);
+    try {
+      const res = await fetch(`/api/competitions/${competitionId}`, { method: "DELETE" });
+      if (res.ok) {
+        setCompetitions((prev) => prev.filter((c) => String(c.id) !== competitionId));
+      }
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  // Add action column based on role
+  const columns: Column<Competition>[] = (() => {
+    if (role === "rep") {
+      return [
+        ...baseColumns,
+        {
+          key: "id" as keyof Competition & string,
+          label: "",
+          sortable: false,
+          render: (v: unknown) => {
+            const compId = String(v);
+            if (enrolledIds.has(Number(compId))) {
               return (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleJoin(compId);
-                  }}
-                  disabled={joiningId === compId}
-                  className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white transition rounded-lg px-3 py-1.5 text-xs font-semibold"
-                >
-                  {joiningId === compId ? "Joining..." : "Join"}
-                </button>
+                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-600 border border-emerald-200">
+                  Joined
+                </span>
               );
-            },
+            }
+            return (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleJoin(compId);
+                }}
+                disabled={joiningId === compId}
+                className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white transition rounded-lg px-3 py-1.5 text-xs font-semibold"
+              >
+                {joiningId === compId ? "Joining..." : "Join"}
+              </button>
+            );
           },
-        ]
-      : baseColumns;
+        },
+      ];
+    }
+    if (role === "manager") {
+      return [
+        ...baseColumns,
+        {
+          key: "id" as keyof Competition & string,
+          label: "",
+          sortable: false,
+          render: (v: unknown) => {
+            const compId = String(v);
+            return (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDelete(compId);
+                }}
+                disabled={deletingId === compId}
+                className="text-red-500 hover:text-red-700 disabled:opacity-50 transition text-xs font-medium"
+              >
+                {deletingId === compId ? "Deleting..." : "Delete"}
+              </button>
+            );
+          },
+        },
+      ];
+    }
+    return baseColumns;
+  })();
 
   if (loading) {
     return (
@@ -170,43 +216,65 @@ export default function CompetitionsPage() {
       </div>
 
       {role === "manager" && showForm && (
-        <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm flex gap-3 items-end">
-          <div className="flex-1">
-            <label className="text-sm text-gray-500 block mb-1">Competition Name</label>
-            <input
-              type="text"
-              placeholder="e.g. Q3 Revenue Sprint"
-              value={newName}
-              onChange={(e) => setNewName(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleCreate()}
-              className="bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 rounded-xl px-4 h-10 text-sm w-full focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-            />
+        <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm space-y-4">
+          <div className="flex gap-3 items-end">
+            <div className="flex-1">
+              <label className="text-sm text-gray-500 block mb-1">Competition Name</label>
+              <input
+                type="text"
+                placeholder="e.g. Q3 Revenue Sprint"
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleCreate()}
+                className="bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 rounded-xl px-4 h-10 text-sm w-full focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+              />
+            </div>
+            <div className="w-40">
+              <label className="text-sm text-gray-500 block mb-1">Prize ($)</label>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                placeholder="0"
+                value={newPrize}
+                onChange={(e) => setNewPrize(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleCreate()}
+                className="bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 rounded-xl px-4 h-10 text-sm w-full focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+              />
+            </div>
           </div>
-          <div className="w-40">
-            <label className="text-sm text-gray-500 block mb-1">Prize ($)</label>
-            <input
-              type="number"
-              min="0"
-              step="0.01"
-              placeholder="0"
-              value={newPrize}
-              onChange={(e) => setNewPrize(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleCreate()}
-              className="bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 rounded-xl px-4 h-10 text-sm w-full focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-            />
+          <div className="flex gap-3 items-end">
+            <div className="w-44">
+              <label className="text-sm text-gray-500 block mb-1">Start Date</label>
+              <input
+                type="date"
+                value={newStartDate}
+                onChange={(e) => setNewStartDate(e.target.value)}
+                className="bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-4 h-10 text-sm w-full focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+              />
+            </div>
+            <div className="w-44">
+              <label className="text-sm text-gray-500 block mb-1">End Date</label>
+              <input
+                type="date"
+                value={newEndDate}
+                onChange={(e) => setNewEndDate(e.target.value)}
+                className="bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-4 h-10 text-sm w-full focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+              />
+            </div>
+            <button
+              onClick={handleCreate}
+              className="bg-blue-600 hover:bg-blue-700 transition text-white rounded-xl px-5 py-2.5 text-sm font-semibold shadow-sm"
+            >
+              Create
+            </button>
+            <button
+              onClick={() => setShowForm(false)}
+              className="text-gray-500 hover:text-gray-900 transition px-4 py-2.5 rounded-xl text-sm"
+            >
+              Cancel
+            </button>
           </div>
-          <button
-            onClick={handleCreate}
-            className="bg-blue-600 hover:bg-blue-700 transition text-white rounded-xl px-5 py-2.5 text-sm font-semibold shadow-sm"
-          >
-            Create
-          </button>
-          <button
-            onClick={() => setShowForm(false)}
-            className="text-gray-500 hover:text-gray-900 transition px-4 py-2.5 rounded-xl text-sm"
-          >
-            Cancel
-          </button>
         </div>
       )}
 
