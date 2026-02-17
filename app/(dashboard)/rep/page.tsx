@@ -5,6 +5,8 @@ import Link from "next/link";
 import { KPICard } from "@/components/kpi-card";
 import { BarChart } from "@/components/charts/bar-chart";
 import { DataTable } from "@/components/data-table";
+import { SkeletonKPIRow, SkeletonChart, SkeletonTable } from "@/components/skeleton";
+import { useToast } from "@/components/toast";
 import { formatCurrency } from "@/lib/format";
 import { apiFetch } from "@/lib/api";
 import { KPI, ChartDataPoint, Participant, Column } from "@/lib/types";
@@ -51,35 +53,62 @@ const leaderboardColumns: Column<Participant>[] = [
 ];
 
 function CountdownTimer({ endDate }: { endDate: string }) {
-  const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0 });
+  const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
 
   useEffect(() => {
     function calc() {
       const diff = new Date(endDate).getTime() - Date.now();
-      if (diff <= 0) return { days: 0, hours: 0, minutes: 0 };
+      if (diff <= 0) return { days: 0, hours: 0, minutes: 0, seconds: 0 };
       return {
         days: Math.floor(diff / (1000 * 60 * 60 * 24)),
         hours: Math.floor((diff / (1000 * 60 * 60)) % 24),
         minutes: Math.floor((diff / (1000 * 60)) % 60),
+        seconds: Math.floor((diff / 1000) % 60),
       };
     }
     setTimeLeft(calc());
-    const id = setInterval(() => setTimeLeft(calc()), 60000);
+    const id = setInterval(() => setTimeLeft(calc()), 1000);
     return () => clearInterval(id);
   }, [endDate]);
 
+  // Urgency color: green > 7 days, amber 1-7 days, red < 1 day
+  const totalHours = timeLeft.days * 24 + timeLeft.hours;
+  const urgency = totalHours > 168 ? "green" : totalHours > 24 ? "amber" : "red";
+  const urgencyColors = {
+    green: "bg-emerald-50 border-emerald-200 text-emerald-700",
+    amber: "bg-amber-50 border-amber-200 text-amber-700",
+    red: "bg-red-50 border-red-200 text-red-700",
+  };
+  const digitBg = {
+    green: "bg-emerald-100/60",
+    amber: "bg-amber-100/60",
+    red: "bg-red-100/60",
+  };
+
+  const segments = [
+    { label: "Days", value: timeLeft.days },
+    { label: "Hours", value: timeLeft.hours },
+    { label: "Min", value: timeLeft.minutes },
+    { label: "Sec", value: timeLeft.seconds },
+  ];
+
   return (
-    <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
-      <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-4">Time Remaining</h3>
-      <div className="flex gap-6">
-        {[
-          { label: "Days", value: timeLeft.days },
-          { label: "Hours", value: timeLeft.hours },
-          { label: "Minutes", value: timeLeft.minutes },
-        ].map((item) => (
-          <div key={item.label} className="text-center">
-            <p className="text-3xl font-bold tracking-tight">{item.value}</p>
-            <p className="text-xs text-gray-400 mt-1">{item.label}</p>
+    <div className={`border rounded-2xl p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)] transition-colors ${urgencyColors[urgency]}`}>
+      <h3 className="text-xs font-semibold uppercase tracking-wider opacity-70 mb-4">Time Remaining</h3>
+      <div className="flex gap-3">
+        {segments.map((item, i) => (
+          <div key={item.label} className="flex items-center gap-3">
+            <div className="text-center">
+              <div className={`${digitBg[urgency]} rounded-xl px-4 py-3 min-w-[64px]`}>
+                <p className="text-3xl font-bold tracking-tight font-mono tabular-nums">
+                  {String(item.value).padStart(2, "0")}
+                </p>
+              </div>
+              <p className="text-[10px] font-semibold uppercase tracking-wider mt-1.5 opacity-60">{item.label}</p>
+            </div>
+            {i < segments.length - 1 && (
+              <span className="text-2xl font-bold opacity-30 -mt-5">:</span>
+            )}
           </div>
         ))}
       </div>
@@ -91,7 +120,7 @@ function LogSaleCard({ competition, onSaleLogged }: { competition: ActiveCompeti
   const [revenue, setRevenue] = useState("");
   const [deals, setDeals] = useState("1");
   const [logging, setLogging] = useState(false);
-  const [success, setSuccess] = useState(false);
+  const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -105,9 +134,10 @@ function LogSaleCard({ competition, onSaleLogged }: { competition: ActiveCompeti
       if (res.ok) {
         setRevenue("");
         setDeals("1");
-        setSuccess(true);
-        setTimeout(() => setSuccess(false), 2000);
+        toast("Sale logged successfully!");
         await onSaleLogged();
+      } else {
+        toast("Failed to log sale", "error");
       }
     } finally {
       setLogging(false);
@@ -150,9 +180,6 @@ function LogSaleCard({ competition, onSaleLogged }: { competition: ActiveCompeti
         >
           {logging ? "Logging..." : "Log Sale"}
         </button>
-        {success && (
-          <span className="text-emerald-600 text-sm font-medium">Sale logged!</span>
-        )}
       </form>
     </div>
   );
@@ -186,7 +213,9 @@ export default function RepDashboardPage() {
           <h1 className="text-3xl font-bold tracking-tight">My Dashboard</h1>
           <p className="text-gray-400 mt-1">Loading your performance data...</p>
         </div>
-        <div className="animate-pulse text-gray-400">Loading...</div>
+        <SkeletonKPIRow />
+        <SkeletonChart />
+        <SkeletonTable rows={5} cols={4} />
       </div>
     );
   }
@@ -212,7 +241,7 @@ export default function RepDashboardPage() {
   const nearestEnding = hasActive ? data.activeCompetitions[0] : null;
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-10 animate-fade-in-up">
       {/* Header */}
       <div className="flex items-center gap-4">
         <div>
@@ -234,7 +263,7 @@ export default function RepDashboardPage() {
       {data.kpis.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {data.kpis.map((kpi, i) => (
-            <KPICard key={kpi.label} kpi={kpi} accentColor={["border-l-blue-500", "border-l-emerald-500", "border-l-violet-500", "border-l-amber-500"][i % 4]} />
+            <KPICard key={kpi.label} kpi={kpi} accentColor={["border-l-blue-500", "border-l-emerald-500", "border-l-violet-500", "border-l-amber-500"][i % 4]} delay={i * 75} />
           ))}
         </div>
       )}

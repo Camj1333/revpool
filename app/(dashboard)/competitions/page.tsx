@@ -5,6 +5,9 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { DataTable } from "@/components/data-table";
 import { StatusBadge } from "@/components/status-badge";
+import { SkeletonTable } from "@/components/skeleton";
+import { useToast } from "@/components/toast";
+import { Modal } from "@/components/modal";
 import { formatCurrency } from "@/lib/format";
 import { apiFetch } from "@/lib/api";
 import { Competition, CompetitionStatus, Column } from "@/lib/types";
@@ -48,6 +51,7 @@ export default function CompetitionsPage() {
   const { data: session } = useSession();
   const role = (session?.user as Record<string, unknown> | undefined)?.role as string | undefined;
 
+  const { toast } = useToast();
   const [filter, setFilter] = useState<CompetitionStatus | "all">("all");
   const [showForm, setShowForm] = useState(false);
   const [newName, setNewName] = useState("");
@@ -100,6 +104,7 @@ export default function CompetitionsPage() {
       setNewStartDate(new Date().toISOString().split("T")[0]);
       setNewEndDate("");
       setShowForm(false);
+      toast("Competition created!");
     }
   };
 
@@ -196,13 +201,13 @@ export default function CompetitionsPage() {
     return (
       <div className="space-y-8">
         <h1 className="text-3xl font-bold tracking-tight">Competitions</h1>
-        <div className="animate-pulse text-gray-400">Loading...</div>
+        <SkeletonTable rows={5} cols={6} />
       </div>
     );
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 animate-fade-in-up">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold tracking-tight">Competitions</h1>
         {role === "manager" && (
@@ -215,36 +220,33 @@ export default function CompetitionsPage() {
         )}
       </div>
 
-      {role === "manager" && showForm && (
-        <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm space-y-4">
-          <div className="flex gap-3 items-end">
-            <div className="flex-1">
-              <label className="text-sm text-gray-500 block mb-1">Competition Name</label>
-              <input
-                type="text"
-                placeholder="e.g. Q3 Revenue Sprint"
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleCreate()}
-                className="bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 rounded-xl px-4 h-10 text-sm w-full focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-              />
-            </div>
-            <div className="w-40">
-              <label className="text-sm text-gray-500 block mb-1">Prize ($)</label>
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                placeholder="0"
-                value={newPrize}
-                onChange={(e) => setNewPrize(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleCreate()}
-                className="bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 rounded-xl px-4 h-10 text-sm w-full focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-              />
-            </div>
+      <Modal open={showForm} onClose={() => setShowForm(false)} title="New Competition">
+        <div className="space-y-4">
+          <div>
+            <label className="text-sm text-gray-500 block mb-1">Competition Name</label>
+            <input
+              type="text"
+              placeholder="e.g. Q3 Revenue Sprint"
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleCreate()}
+              className="bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 rounded-xl px-4 h-10 text-sm w-full focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+            />
           </div>
-          <div className="flex gap-3 items-end">
-            <div className="w-44">
+          <div>
+            <label className="text-sm text-gray-500 block mb-1">Prize ($)</label>
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              placeholder="0"
+              value={newPrize}
+              onChange={(e) => setNewPrize(e.target.value)}
+              className="bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 rounded-xl px-4 h-10 text-sm w-full focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
               <label className="text-sm text-gray-500 block mb-1">Start Date</label>
               <input
                 type="date"
@@ -253,7 +255,7 @@ export default function CompetitionsPage() {
                 className="bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-4 h-10 text-sm w-full focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
               />
             </div>
-            <div className="w-44">
+            <div>
               <label className="text-sm text-gray-500 block mb-1">End Date</label>
               <input
                 type="date"
@@ -262,6 +264,8 @@ export default function CompetitionsPage() {
                 className="bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-4 h-10 text-sm w-full focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
               />
             </div>
+          </div>
+          <div className="flex items-center gap-3 pt-2">
             <button
               onClick={handleCreate}
               className="bg-blue-600 hover:bg-blue-700 transition text-white rounded-xl px-5 py-2.5 text-sm font-semibold shadow-sm"
@@ -276,7 +280,7 @@ export default function CompetitionsPage() {
             </button>
           </div>
         </div>
-      )}
+      </Modal>
 
       {/* Filter tabs */}
       <div className="flex gap-1 bg-gray-100 rounded-xl p-1.5 w-fit">
@@ -299,6 +303,9 @@ export default function CompetitionsPage() {
         columns={columns}
         data={filtered}
         onRowClick={(row) => router.push(`/competitions/${row.id}`)}
+        searchable
+        searchKey="name"
+        pageSize={10}
       />
     </div>
   );

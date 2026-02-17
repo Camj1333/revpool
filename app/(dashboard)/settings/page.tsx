@@ -11,7 +11,7 @@ export default function SettingsPage() {
   const roleLabel = role === "manager" ? "Manager" : "Sales Rep";
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 animate-fade-in-up">
       <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
 
       <div className="grid gap-6">

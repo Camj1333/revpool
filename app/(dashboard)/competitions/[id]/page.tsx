@@ -7,6 +7,9 @@ import { KPICard } from "@/components/kpi-card";
 import { BarChart } from "@/components/charts/bar-chart";
 import { DataTable } from "@/components/data-table";
 import { StatusBadge } from "@/components/status-badge";
+import { SkeletonKPIRow, SkeletonChart, SkeletonTable } from "@/components/skeleton";
+import { useToast } from "@/components/toast";
+import { Modal } from "@/components/modal";
 import { formatCurrency } from "@/lib/format";
 import { apiFetch } from "@/lib/api";
 import { Competition, Participant, Column, ChartDataPoint, FundingTransaction, PrizeWithdrawal } from "@/lib/types";
@@ -66,7 +69,6 @@ export default function CompetitionDetailPage({
   const [saleRevenue, setSaleRevenue] = useState("");
   const [saleDeals, setSaleDeals] = useState("1");
   const [loggingSale, setLoggingSale] = useState(false);
-  const [saleSuccess, setSaleSuccess] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState("");
   const [editPrize, setEditPrize] = useState("");
@@ -75,10 +77,11 @@ export default function CompetitionDetailPage({
   const [editEndDate, setEditEndDate] = useState("");
   const [saving, setSaving] = useState(false);
 
+  const { toast } = useToast();
+
   // Funding state
   const [fundAmount, setFundAmount] = useState("");
   const [funding, setFunding] = useState(false);
-  const [fundSuccess, setFundSuccess] = useState(false);
   const [fundingHistory, setFundingHistory] = useState<FundingTransaction[]>([]);
 
   // Withdrawal state
@@ -160,8 +163,7 @@ export default function CompetitionDetailPage({
       if (res.ok) {
         setSaleRevenue("");
         setSaleDeals("1");
-        setSaleSuccess(true);
-        setTimeout(() => setSaleSuccess(false), 2000);
+        toast("Sale logged successfully!");
         await refreshData();
       }
     } finally {
@@ -214,8 +216,7 @@ export default function CompetitionDetailPage({
       });
       if (res.ok) {
         setFundAmount("");
-        setFundSuccess(true);
-        setTimeout(() => setFundSuccess(false), 2000);
+        toast("Competition funded successfully!");
         await Promise.all([refreshData(), refreshFunding()]);
       }
     } finally {
@@ -261,11 +262,16 @@ export default function CompetitionDetailPage({
 
   if (loading) {
     return (
-      <div className="space-y-4">
+      <div className="space-y-8">
         <Link href="/competitions" className="text-blue-600 hover:text-blue-500 text-sm font-medium">
           &larr; Back to Competitions
         </Link>
-        <div className="animate-pulse text-gray-400">Loading...</div>
+        <div className="animate-pulse bg-gray-200 rounded h-8 w-64" />
+        <SkeletonKPIRow />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <SkeletonChart />
+          <SkeletonTable rows={5} cols={4} />
+        </div>
       </div>
     );
   }
@@ -307,7 +313,7 @@ export default function CompetitionDetailPage({
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 animate-fade-in-up">
       <Link
         href="/competitions"
         className="text-blue-600 hover:text-blue-500 text-sm inline-flex items-center gap-1 font-medium"
@@ -347,84 +353,83 @@ export default function CompetitionDetailPage({
         {competition.startDate} &mdash; {competition.endDate || "TBD"}
       </p>
 
-      {/* Edit Competition Form — managers only */}
-      {role === "manager" && editing && (
-        <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
-          <h2 className="text-lg font-semibold tracking-tight mb-4">Edit Competition</h2>
-          <form onSubmit={handleSaveEdit} className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">Name</label>
-                <input
-                  type="text"
-                  required
-                  value={editName}
-                  onChange={(e) => setEditName(e.target.value)}
-                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-4 h-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">Prize ($)</label>
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  required
-                  value={editPrize}
-                  onChange={(e) => setEditPrize(e.target.value)}
-                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-4 h-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">Status</label>
-                <select
-                  value={editStatus}
-                  onChange={(e) => setEditStatus(e.target.value)}
-                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-4 h-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="upcoming">Upcoming</option>
-                  <option value="active">Active</option>
-                  <option value="completed">Completed</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">Start Date</label>
-                <input
-                  type="date"
-                  value={editStartDate}
-                  onChange={(e) => setEditStartDate(e.target.value)}
-                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-4 h-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">End Date</label>
-                <input
-                  type="date"
-                  value={editEndDate}
-                  onChange={(e) => setEditEndDate(e.target.value)}
-                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-4 h-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
+      {/* Edit Competition Modal — managers only */}
+      <Modal open={editing} onClose={() => setEditing(false)} title="Edit Competition">
+        <form onSubmit={handleSaveEdit} className="space-y-4">
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1">Name</label>
+            <input
+              type="text"
+              required
+              value={editName}
+              onChange={(e) => setEditName(e.target.value)}
+              className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-4 h-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Prize ($)</label>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                required
+                value={editPrize}
+                onChange={(e) => setEditPrize(e.target.value)}
+                className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-4 h-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
             </div>
-            <div className="flex items-center gap-3">
-              <button
-                type="submit"
-                disabled={saving}
-                className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white transition rounded-xl px-5 py-2.5 text-sm font-semibold"
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Status</label>
+              <select
+                value={editStatus}
+                onChange={(e) => setEditStatus(e.target.value)}
+                className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-4 h-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
-                {saving ? "Saving..." : "Save"}
-              </button>
-              <button
-                type="button"
-                onClick={() => setEditing(false)}
-                className="text-gray-500 hover:text-gray-700 transition text-sm font-medium"
-              >
-                Cancel
-              </button>
+                <option value="upcoming">Upcoming</option>
+                <option value="active">Active</option>
+                <option value="completed">Completed</option>
+              </select>
             </div>
-          </form>
-        </div>
-      )}
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Start Date</label>
+              <input
+                type="date"
+                value={editStartDate}
+                onChange={(e) => setEditStartDate(e.target.value)}
+                className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-4 h-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">End Date</label>
+              <input
+                type="date"
+                value={editEndDate}
+                onChange={(e) => setEditEndDate(e.target.value)}
+                className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-4 h-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+          </div>
+          <div className="flex items-center gap-3 pt-2">
+            <button
+              type="submit"
+              disabled={saving}
+              className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white transition rounded-xl px-5 py-2.5 text-sm font-semibold"
+            >
+              {saving ? "Saving..." : "Save"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setEditing(false)}
+              className="text-gray-500 hover:text-gray-700 transition text-sm font-medium"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      </Modal>
 
       {/* Fund Competition — managers only */}
       {role === "manager" && (
@@ -451,9 +456,6 @@ export default function CompetitionDetailPage({
             >
               {funding ? "Funding..." : "Fund"}
             </button>
-            {fundSuccess && (
-              <span className="text-emerald-600 text-sm font-medium">Funded!</span>
-            )}
           </form>
 
           {/* Funding History */}
@@ -514,9 +516,6 @@ export default function CompetitionDetailPage({
             >
               {loggingSale ? "Logging..." : "Log Sale"}
             </button>
-            {saleSuccess && (
-              <span className="text-emerald-600 text-sm font-medium">Sale logged!</span>
-            )}
           </form>
         </div>
       )}
@@ -584,7 +583,7 @@ export default function CompetitionDetailPage({
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {kpis.map((kpi, i) => (
-          <KPICard key={kpi.label} kpi={kpi} accentColor={["border-l-blue-500", "border-l-emerald-500", "border-l-violet-500", "border-l-amber-500"][i % 4]} />
+          <KPICard key={kpi.label} kpi={kpi} accentColor={["border-l-blue-500", "border-l-emerald-500", "border-l-violet-500", "border-l-amber-500"][i % 4]} delay={i * 75} />
         ))}
       </div>
 

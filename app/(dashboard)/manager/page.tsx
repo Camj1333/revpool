@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import { KPICard } from "@/components/kpi-card";
 import { DataTable } from "@/components/data-table";
+import { SkeletonKPIRow, SkeletonTable } from "@/components/skeleton";
+import { EmptyState } from "@/components/empty-state";
 import { formatCurrency } from "@/lib/format";
 import { StatusBadge } from "@/components/status-badge";
 import { apiFetch } from "@/lib/api";
@@ -92,7 +94,9 @@ export default function ManagerDashboardPage() {
     return (
       <div className="space-y-10">
         <h1 className="text-3xl font-bold tracking-tight">Team Overview</h1>
-        <div className="animate-pulse text-gray-400">Loading...</div>
+        <SkeletonKPIRow />
+        <SkeletonTable rows={4} cols={6} />
+        <SkeletonTable rows={5} cols={4} />
       </div>
     );
   }
@@ -107,28 +111,34 @@ export default function ManagerDashboardPage() {
   }
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-10 animate-fade-in-up">
       <h1 className="text-3xl font-bold tracking-tight">Team Overview</h1>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {data.kpis.map((kpi, i) => (
-          <KPICard key={kpi.label} kpi={kpi} accentColor={["border-l-blue-500", "border-l-emerald-500", "border-l-violet-500", "border-l-amber-500"][i % 4]} />
+          <KPICard key={kpi.label} kpi={kpi} accentColor={["border-l-blue-500", "border-l-emerald-500", "border-l-violet-500", "border-l-amber-500"][i % 4]} delay={i * 75} />
         ))}
       </div>
 
       {/* Active Pools */}
-      {data.activePools.length > 0 && (
-        <div>
-          <h2 className="text-lg font-semibold tracking-tight mb-4">Active Pools</h2>
+      <div>
+        <h2 className="text-lg font-semibold tracking-tight mb-4">Active Pools</h2>
+        {data.activePools.length > 0 ? (
           <DataTable columns={poolColumns} data={data.activePools} />
-        </div>
-      )}
+        ) : (
+          <EmptyState icon="trophy" title="No active pools" description="Create a competition to get your team started." action={{ label: "Create Competition", href: "/competitions" }} />
+        )}
+      </div>
 
       {/* Team Leaderboard */}
       <div>
         <h2 className="text-lg font-semibold tracking-tight mb-4">Team Leaderboard</h2>
-        <DataTable columns={leaderboardColumns} data={data.leaderboard} />
+        {data.leaderboard.length > 0 ? (
+          <DataTable columns={leaderboardColumns} data={data.leaderboard} />
+        ) : (
+          <EmptyState icon="users" title="No participants yet" description="Once reps join a competition, they'll appear here." />
+        )}
       </div>
     </div>
   );

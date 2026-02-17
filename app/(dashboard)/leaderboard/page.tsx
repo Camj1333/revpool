@@ -2,16 +2,41 @@
 
 import { useState, useEffect } from "react";
 import { DataTable } from "@/components/data-table";
+import { SkeletonCard, SkeletonTable } from "@/components/skeleton";
+import { EmptyState } from "@/components/empty-state";
 import { formatCurrency } from "@/lib/format";
 import { apiFetch } from "@/lib/api";
 import { Participant, Column } from "@/lib/types";
 
-const podiumColors = [
-  "bg-gradient-to-br from-amber-50 to-yellow-50 border-amber-200/60",
-  "bg-gradient-to-br from-gray-50 to-slate-100 border-gray-200/60",
-  "bg-gradient-to-br from-orange-50 to-amber-50 border-orange-200/60",
+const podiumConfig = [
+  {
+    order: "sm:order-2",
+    color: "bg-gradient-to-br from-amber-50 to-yellow-50 border-amber-300",
+    ring: "ring-2 ring-amber-200",
+    trophy: "\uD83E\uDD47",
+    avatarBg: "from-amber-200 to-yellow-200 text-amber-800",
+    height: "sm:-mt-4",
+    label: "1st Place",
+  },
+  {
+    order: "sm:order-1",
+    color: "bg-gradient-to-br from-gray-50 to-slate-100 border-gray-300",
+    ring: "",
+    trophy: "\uD83E\uDD48",
+    avatarBg: "from-gray-200 to-slate-200 text-gray-700",
+    height: "sm:mt-4",
+    label: "2nd Place",
+  },
+  {
+    order: "sm:order-3",
+    color: "bg-gradient-to-br from-orange-50 to-amber-50 border-orange-300",
+    ring: "",
+    trophy: "\uD83E\uDD49",
+    avatarBg: "from-orange-200 to-amber-200 text-orange-800",
+    height: "sm:mt-8",
+    label: "3rd Place",
+  },
 ];
-const podiumLabels = ["1st", "2nd", "3rd"];
 
 const columns: Column<Participant>[] = [
   { key: "rank", label: "#" },
@@ -65,7 +90,12 @@ export default function LeaderboardPage() {
     return (
       <div className="space-y-8">
         <h1 className="text-3xl font-bold tracking-tight">Leaderboard</h1>
-        <div className="animate-pulse text-gray-400">Loading...</div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <SkeletonCard key={i} className="text-center" />
+          ))}
+        </div>
+        <SkeletonTable rows={7} cols={5} />
       </div>
     );
   }
@@ -73,28 +103,41 @@ export default function LeaderboardPage() {
   const top3 = entries.slice(0, 3);
   const rest = entries.slice(3);
 
+  if (entries.length === 0) {
+    return (
+      <div className="space-y-8">
+        <h1 className="text-3xl font-bold tracking-tight">Leaderboard</h1>
+        <EmptyState icon="trophy" title="No rankings yet" description="Once a competition starts and reps log sales, rankings will appear here." action={{ label: "View Competitions", href: "/competitions" }} />
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 animate-fade-in-up">
       <h1 className="text-3xl font-bold tracking-tight">Leaderboard</h1>
 
-      {/* Podium */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {top3.map((p, i) => (
-          <div
-            key={p.id}
-            className={`${podiumColors[i]} border rounded-2xl p-6 text-center shadow-sm`}
-          >
-            <div className="text-lg font-bold text-gray-300 mb-2">{podiumLabels[i]}</div>
-            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-100 to-blue-200 text-blue-700 flex items-center justify-center text-lg font-semibold mx-auto mb-3">
-              {p.avatar}
+      {/* Podium — 2nd / 1st / 3rd layout */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
+        {top3.map((p, i) => {
+          const cfg = podiumConfig[i];
+          return (
+            <div
+              key={p.id}
+              className={`${cfg.order} ${cfg.height} ${cfg.color} ${cfg.ring} border-2 rounded-2xl p-6 text-center shadow-sm transition-all duration-200 hover:shadow-md hover:-translate-y-1`}
+            >
+              <div className="text-3xl mb-2">{cfg.trophy}</div>
+              <div className={`w-16 h-16 rounded-full bg-gradient-to-br ${cfg.avatarBg} flex items-center justify-center text-lg font-semibold mx-auto mb-3 shadow-sm`}>
+                {p.avatar}
+              </div>
+              <p className="font-semibold text-lg">{p.name}</p>
+              <p className="text-emerald-600 font-mono text-2xl font-bold mt-1">
+                {formatCurrency(Number(p.revenue))}
+              </p>
+              <p className="text-gray-400 text-sm mt-1">{p.deals} deals</p>
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 mt-2">{cfg.label}</p>
             </div>
-            <p className="font-semibold text-lg">{p.name}</p>
-            <p className="text-emerald-600 font-mono text-2xl font-bold mt-1">
-              {formatCurrency(Number(p.revenue))}
-            </p>
-            <p className="text-gray-400 text-sm mt-1">{p.deals} deals</p>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Full ranking */}

@@ -12,6 +12,8 @@ interface BarChartProps {
 export function BarChart({ data, height = 300 }: BarChartProps) {
   const [hovered, setHovered] = useState<number | null>(null);
 
+  if (data.length === 0) return null;
+
   const maxValue = Math.max(...data.map((d) => d.value));
   const padding = { top: 20, right: 20, bottom: 40, left: 60 };
   const chartWidth = 600;
@@ -30,7 +32,7 @@ export function BarChart({ data, height = 300 }: BarChartProps) {
       >
         <defs>
           <filter id="tooltip-shadow" x="-20%" y="-20%" width="140%" height="140%">
-            <feDropShadow dx="0" dy="1" stdDeviation="2" floodOpacity="0.1" />
+            <feDropShadow dx="0" dy="2" stdDeviation="3" floodOpacity="0.12" />
           </filter>
           <linearGradient id="bar-gradient" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="#60a5fa" />
@@ -68,9 +70,21 @@ export function BarChart({ data, height = 300 }: BarChartProps) {
           );
         })}
 
+        {/* Hover highlight column */}
+        {hovered !== null && (
+          <rect
+            x={padding.left + hovered * barWidth}
+            y={padding.top}
+            width={barWidth}
+            height={innerHeight}
+            fill="#f8fafc"
+            rx={4}
+          />
+        )}
+
         {/* Bars */}
         {data.map((d, i) => {
-          const barHeight = (d.value / maxValue) * innerHeight;
+          const barHeight = maxValue > 0 ? (d.value / maxValue) * innerHeight : 0;
           const x = padding.left + i * barWidth + barWidth * 0.15;
           const y = padding.top + innerHeight - barHeight;
           const w = barWidth * 0.7;
@@ -80,7 +94,16 @@ export function BarChart({ data, height = 300 }: BarChartProps) {
               key={i}
               onMouseEnter={() => setHovered(i)}
               onMouseLeave={() => setHovered(null)}
+              className="cursor-pointer"
             >
+              {/* Invisible hit area */}
+              <rect
+                x={padding.left + i * barWidth}
+                y={padding.top}
+                width={barWidth}
+                height={innerHeight + padding.bottom}
+                fill="transparent"
+              />
               <rect
                 x={x}
                 y={y}
@@ -88,14 +111,20 @@ export function BarChart({ data, height = 300 }: BarChartProps) {
                 height={barHeight}
                 rx={6}
                 fill={hovered === i ? "url(#bar-gradient-hover)" : "url(#bar-gradient)"}
-                className="transition-all duration-150"
+                className="transition-all duration-200"
+                style={{
+                  transform: hovered === i ? "scaleY(1.02)" : "scaleY(1)",
+                  transformOrigin: `${x + w / 2}px ${padding.top + innerHeight}px`,
+                }}
               />
               {/* X label */}
               <text
                 x={padding.left + i * barWidth + barWidth / 2}
                 y={chartHeight - 10}
                 textAnchor="middle"
-                className="fill-gray-500 text-[11px] font-medium"
+                className={`text-[11px] font-medium transition-all duration-150 ${
+                  hovered === i ? "fill-gray-900" : "fill-gray-500"
+                }`}
               >
                 {d.label}
               </text>
@@ -104,37 +133,48 @@ export function BarChart({ data, height = 300 }: BarChartProps) {
         })}
 
         {/* Tooltip */}
-        {hovered !== null && (
-          <g filter="url(#tooltip-shadow)">
-            <rect
-              x={padding.left + hovered * barWidth + barWidth / 2 - 40}
-              y={
-                padding.top +
-                innerHeight -
-                (data[hovered].value / maxValue) * innerHeight -
-                32
-              }
-              width={80}
-              height={24}
-              rx={4}
-              className="fill-white"
-              stroke="#e5e7eb"
-              strokeWidth={1}
-            />
-            <text
-              x={padding.left + hovered * barWidth + barWidth / 2}
-              y={
-                padding.top +
-                innerHeight -
-                (data[hovered].value / maxValue) * innerHeight -
-                16
-              }
-              textAnchor="middle"
-              className="fill-gray-900 text-[12px] font-semibold"
-            >
-              {formatCompact(data[hovered].value)}
-            </text>
-          </g>
+        {hovered !== null && data[hovered] && (
+          (() => {
+            const barHeight = maxValue > 0 ? (data[hovered].value / maxValue) * innerHeight : 0;
+            const tooltipX = padding.left + hovered * barWidth + barWidth / 2;
+            const tooltipY = padding.top + innerHeight - barHeight - 38;
+            const label = data[hovered].label;
+            const value = formatCompact(data[hovered].value);
+
+            return (
+              <g filter="url(#tooltip-shadow)">
+                <rect
+                  x={tooltipX - 48}
+                  y={tooltipY}
+                  width={96}
+                  height={32}
+                  rx={8}
+                  className="fill-gray-900"
+                />
+                {/* Arrow */}
+                <polygon
+                  points={`${tooltipX - 5},${tooltipY + 32} ${tooltipX + 5},${tooltipY + 32} ${tooltipX},${tooltipY + 37}`}
+                  className="fill-gray-900"
+                />
+                <text
+                  x={tooltipX}
+                  y={tooltipY + 14}
+                  textAnchor="middle"
+                  className="fill-gray-400 text-[10px]"
+                >
+                  {label}
+                </text>
+                <text
+                  x={tooltipX}
+                  y={tooltipY + 26}
+                  textAnchor="middle"
+                  className="fill-white text-[12px] font-semibold"
+                >
+                  {value}
+                </text>
+              </g>
+            );
+          })()
         )}
       </svg>
     </div>

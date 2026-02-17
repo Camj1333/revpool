@@ -3,6 +3,8 @@
 import { useState, useEffect, useMemo } from "react";
 import { LineChart } from "@/components/charts/line-chart";
 import { BarChart } from "@/components/charts/bar-chart";
+import { SkeletonChart } from "@/components/skeleton";
+import { EmptyState } from "@/components/empty-state";
 import { apiFetch } from "@/lib/api";
 import { ChartDataPoint } from "@/lib/types";
 
@@ -60,13 +62,26 @@ export default function AnalyticsPage() {
     return (
       <div className="space-y-10">
         <h1 className="text-3xl font-bold tracking-tight">Analytics</h1>
-        <div className="animate-pulse text-gray-400">Loading...</div>
+        <SkeletonChart />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <SkeletonChart />
+          <SkeletonChart />
+        </div>
+      </div>
+    );
+  }
+
+  if (monthlyRevenue.length === 0 && competitionRevenue.length === 0) {
+    return (
+      <div className="space-y-10">
+        <h1 className="text-3xl font-bold tracking-tight">Analytics</h1>
+        <EmptyState icon="chart" title="No analytics data yet" description="Revenue trends and competition breakdowns will appear once sales are logged." />
       </div>
     );
   }
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-10 animate-fade-in-up">
       <h1 className="text-3xl font-bold tracking-tight">Analytics</h1>
 
       {/* Time range selector */}
